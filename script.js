@@ -1159,7 +1159,7 @@ resource ${cleanResourceName} '${resourceType}@${getLatestApiVersion(schema)}' =
   properties: {
     mode: 'Incremental'
     template: {
-      \$schema: 'https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#'
+      '$schema': 'https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#'
       contentVersion: '1.0.0.0'
       resources: []
     }
@@ -2475,7 +2475,7 @@ function generateDefaultPropertiesForResource(resourceType, resourceId) {
             return `  properties: {
     mode: 'Incremental'
     template: {
-      \$schema: 'https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#'
+      '$schema': 'https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#'
       contentVersion: '1.0.0.0'
       resources: []
     }
