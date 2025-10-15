@@ -112,6 +112,107 @@
                 </div>
             </section>
             
+            <section class="deployment-builder-section">
+                <h2>🚀 Deployment Builder</h2>
+                <div class="deployment-builder">
+                    <h3>Select Resources for Deployment</h3>
+                    <div class="resource-selector">
+                        <div class="resource-checkboxes">
+                            <label class="resource-checkbox">
+                                <input type="checkbox" value="storage" data-schema="storageAccount">
+                                <span class="checkmark">🗄️</span>
+                                <span class="resource-name">Storage Account</span>
+                            </label>
+                            <label class="resource-checkbox">
+                                <input type="checkbox" value="webapp" data-schema="webApp">
+                                <span class="checkmark">🌐</span>
+                                <span class="resource-name">Web App</span>
+                            </label>
+                            <label class="resource-checkbox">
+                                <input type="checkbox" value="vm" data-schema="virtualMachine">
+                                <span class="checkmark">💻</span>
+                                <span class="resource-name">Virtual Machine</span>
+                            </label>
+                            <label class="resource-checkbox">
+                                <input type="checkbox" value="keyvault" data-schema="keyVault">
+                                <span class="checkmark">🔐</span>
+                                <span class="resource-name">Key Vault</span>
+                            </label>
+                            <label class="resource-checkbox">
+                                <input type="checkbox" value="sqldatabase" data-schema="sqlDatabase">
+                                <span class="checkmark">🗃️</span>
+                                <span class="resource-name">SQL Database</span>
+                            </label>
+                            <label class="resource-checkbox">
+                                <input type="checkbox" value="functions" data-schema="azureFunctions">
+                                <span class="checkmark">⚡</span>
+                                <span class="resource-name">Azure Functions</span>
+                            </label>
+                            <label class="resource-checkbox">
+                                <input type="checkbox" value="appplan" data-schema="appServicePlan">
+                                <span class="checkmark">📋</span>
+                                <span class="resource-name">App Service Plan</span>
+                            </label>
+                            <label class="resource-checkbox">
+                                <input type="checkbox" value="vnet" data-schema="virtualNetwork">
+                                <span class="checkmark">🌐</span>
+                                <span class="resource-name">Virtual Network</span>
+                            </label>
+                        </div>
+                        <div class="deployment-options">
+                            <h4>Deployment Options</h4>
+                            <label class="option-checkbox">
+                                <input type="checkbox" id="includeParameters" checked>
+                                <span>Include Parameter Files</span>
+                            </label>
+                            <label class="option-checkbox">
+                                <input type="checkbox" id="includeDependencies" checked>
+                                <span>Auto-detect Dependencies</span>
+                            </label>
+                            <label class="option-checkbox">
+                                <input type="checkbox" id="includeOutputs" checked>
+                                <span>Include Resource Outputs</span>
+                            </label>
+                            <label class="option-checkbox">
+                                <input type="checkbox" id="generateModules">
+                                <span>Generate as Modules</span>
+                            </label>
+                        </div>
+                        <div class="deployment-actions">
+                            <button id="validateAllResources" class="validate-btn">🔍 Validate All</button>
+                            <button id="configureResources" class="config-btn">⚙️ Configure Resources</button>
+                            <button id="previewDeployment" class="preview-btn">👁️ Preview Deployment</button>
+                            <button id="exportSelectedBicep" class="export-btn">📦 Export Selected Resources</button>
+                            <button id="downloadDeploymentPackage" class="download-btn">⬇️ Download Package</button>
+                        </div>
+                    </div>
+                    <div id="selectedResourcesPreview" class="selected-preview">
+                        <h4>Selected Resources (0)</h4>
+                        <div class="selected-list"></div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Resource Configuration Modal -->
+            <div id="resourceConfigModal" class="modal-overlay" style="display: none;">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h3 id="configModalTitle">Configure Resources</h3>
+                        <button id="closeConfigModal" class="close-btn">✕</button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="config-tabs">
+                            <div id="configTabs" class="tab-buttons"></div>
+                            <div id="configPanels" class="tab-panels"></div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button id="resetConfig" class="secondary-btn">🔄 Reset to Defaults</button>
+                        <button id="saveConfig" class="primary-btn">💾 Save Configuration</button>
+                    </div>
+                </div>
+            </section>
+
             <section class="theme-section">
                 <h2>⚙️ Settings</h2>
                 <div class="settings-controls">
@@ -123,6 +224,7 @@
         </main>
     </div>
     
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <script src="utils/schemaParser.js"></script>
     <script src="utils/azureResourceGraph.js"></script>
     <script src="script.js"></script>
