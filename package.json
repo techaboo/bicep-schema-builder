@@ -1,0 +1,29 @@
+{
+  "name": "bicep-schema-builder",
+  "version": "2.0.0",
+  "description": "Interactive tool for building and validating Azure Bicep schemas",
+  "scripts": {
+    "test": "npm run test:schemas",
+    "test:schemas": "node tests/validate-schemas.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/techaboo/bicep-schema-builder.git"
+  },
+  "keywords": [
+    "azure",
+    "bicep",
+    "json-schema",
+    "infrastructure-as-code",
+    "iac",
+    "validation"
+  ],
+  "author": "Bicep Schema Builder Contributors",
+  "license": "MIT",
+  "devDependencies": {
+    "ajv": "^8.12.0"
+  },
+  "engines": {
+    "node": ">=16.0.0"
+  }
+}

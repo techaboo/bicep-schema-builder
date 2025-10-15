@@ -1,0 +1,42 @@
+# Node modules
+node_modules/
+npm-debug.log
+yarn-error.log
+package-lock.json
+
+# Build outputs
+*.json.bak
+*.bicep.bak
+
+# Bicep build outputs
+*.json
+!schemas/*.json
+!package.json
+!package-lock.json
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Environment files
+.env
+.env.local
+*.local
+
+# Test outputs
+coverage/
+.nyc_output/
+
+# Logs
+logs/
+*.log
+
+# Azure
+*.parameters.local.json

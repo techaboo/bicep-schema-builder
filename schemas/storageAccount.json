@@ -6,7 +6,7 @@
   "properties": {
     "apiVersion": {
       "type": "string",
-      "enum": ["2021-04-01", "2021-06-01", "2021-08-01", "2022-05-01"],
+      "enum": ["2021-04-01", "2021-08-01", "2022-05-01", "2023-01-01", "2023-05-01"],
       "description": "The API version for the storage account resource"
     },
     "type": {
@@ -30,9 +30,11 @@
           "type": "string",
           "enum": [
             "Standard_LRS",
-            "Standard_GRS", 
+            "Standard_GRS",
             "Standard_RAGRS",
             "Standard_ZRS",
+            "Standard_GZRS",
+            "Standard_RAGZRS",
             "Premium_LRS",
             "Premium_ZRS"
           ],
@@ -61,15 +63,37 @@
         },
         "minimumTlsVersion": {
           "type": "string",
-          "enum": ["TLS1_0", "TLS1_1", "TLS1_2"],
+          "enum": ["TLS1_0", "TLS1_1", "TLS1_2", "TLS1_3"],
           "description": "Set the minimum TLS version"
         },
         "allowBlobPublicAccess": {
           "type": "boolean",
           "description": "Allow or disallow public blob access"
+        },
+        "allowCrossTenantReplication": {
+          "type": "boolean",
+          "description": "Allow or disallow cross-tenant replication"
         }
       },
       "additionalProperties": true
+    },
+    "identity": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": ["SystemAssigned", "UserAssigned", "SystemAssigned,UserAssigned", "None"],
+          "description": "The type of managed identity"
+        },
+        "userAssignedIdentities": {
+          "type": "object",
+          "description": "User-assigned managed identities",
+          "additionalProperties": {
+            "type": "object"
+          }
+        }
+      },
+      "required": ["type"]
     },
     "tags": {
       "type": "object",
