@@ -1150,7 +1150,25 @@ resource ${cleanResourceName} '${resourceType}@${getLatestApiVersion(schema)}' =
 
 `;
             break;
-            
+
+        case 'Microsoft.Resources/deployments':
+            resource += `resource ${cleanResourceName} '${resourceType}@${getLatestApiVersion(schema)}' = {
+  name: resourceNameFormatted
+  location: location
+  tags: commonTags
+  properties: {
+    mode: 'Incremental'
+    template: {
+      \$schema: 'https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#'
+      contentVersion: '1.0.0.0'
+      resources: []
+    }
+  }
+}
+
+`;
+            break;
+
         default:
             // Generic resource generation
             resource += `resource ${cleanResourceName} '${resourceType}@${getLatestApiVersion(schema)}' = {
@@ -2450,6 +2468,16 @@ function generateDefaultPropertiesForResource(resourceType, resourceId) {
     httpsOnly: httpsOnly
     siteConfig: {
       appSettings: appSettingsFormatted
+    }
+  }
+`;
+        case 'Microsoft.Resources/deployments':
+            return `  properties: {
+    mode: 'Incremental'
+    template: {
+      \$schema: 'https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#'
+      contentVersion: '1.0.0.0'
+      resources: []
     }
   }
 `;
