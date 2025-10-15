@@ -1,0 +1,181 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "title": "Key Vault Schema",
+  "description": "Schema for Azure Key Vault resource in Bicep",
+  "properties": {
+    "apiVersion": {
+      "type": "string",
+      "enum": ["2019-09-01", "2021-04-01-preview", "2021-10-01", "2022-07-01"],
+      "description": "The API version for the key vault resource"
+    },
+    "type": {
+      "type": "string",
+      "const": "Microsoft.KeyVault/vaults",
+      "description": "The resource type for Azure Key Vault"
+    },
+    "name": {
+      "type": "string",
+      "pattern": "^[a-zA-Z0-9-]{3,24}$",
+      "description": "Key vault name (3-24 characters, alphanumeric and hyphens)"
+    },
+    "location": {
+      "type": "string",
+      "description": "Azure region where the key vault will be created"
+    },
+    "properties": {
+      "type": "object",
+      "properties": {
+        "tenantId": {
+          "type": "string",
+          "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+          "description": "Azure Active Directory tenant ID"
+        },
+        "sku": {
+          "type": "object",
+          "properties": {
+            "family": {
+              "type": "string",
+              "const": "A"
+            },
+            "name": {
+              "type": "string",
+              "enum": ["standard", "premium"],
+              "description": "Key vault SKU name"
+            }
+          },
+          "required": ["family", "name"]
+        },
+        "accessPolicies": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "tenantId": {
+                "type": "string",
+                "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
+              },
+              "objectId": {
+                "type": "string",
+                "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
+              },
+              "permissions": {
+                "type": "object",
+                "properties": {
+                  "keys": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "enum": [
+                        "all", "encrypt", "decrypt", "wrapKey", "unwrapKey", 
+                        "sign", "verify", "get", "list", "create", "update", 
+                        "import", "delete", "backup", "restore", "recover", "purge"
+                      ]
+                    }
+                  },
+                  "secrets": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "enum": [
+                        "all", "get", "list", "set", "delete", 
+                        "backup", "restore", "recover", "purge"
+                      ]
+                    }
+                  },
+                  "certificates": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "enum": [
+                        "all", "get", "list", "delete", "create", "import", 
+                        "update", "managecontacts", "getissuers", "listissuers", 
+                        "setissuers", "deleteissuers", "manageissuers", "recover", "purge"
+                      ]
+                    }
+                  }
+                }
+              }
+            },
+            "required": ["tenantId", "objectId", "permissions"]
+          }
+        },
+        "enabledForDeployment": {
+          "type": "boolean",
+          "description": "Enable Azure Virtual Machines to retrieve certificates"
+        },
+        "enabledForDiskEncryption": {
+          "type": "boolean",
+          "description": "Enable Azure Disk Encryption to retrieve secrets"
+        },
+        "enabledForTemplateDeployment": {
+          "type": "boolean",
+          "description": "Enable Azure Resource Manager to retrieve secrets"
+        },
+        "enableSoftDelete": {
+          "type": "boolean",
+          "description": "Enable soft delete for the key vault"
+        },
+        "softDeleteRetentionInDays": {
+          "type": "integer",
+          "minimum": 7,
+          "maximum": 90,
+          "description": "Soft delete retention period in days"
+        },
+        "enablePurgeProtection": {
+          "type": "boolean",
+          "description": "Enable purge protection"
+        },
+        "networkAcls": {
+          "type": "object",
+          "properties": {
+            "bypass": {
+              "type": "string",
+              "enum": ["AzureServices", "None"]
+            },
+            "defaultAction": {
+              "type": "string",
+              "enum": ["Allow", "Deny"]
+            },
+            "ipRules": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "value": {
+                    "type": "string",
+                    "description": "IP address or CIDR range"
+                  }
+                },
+                "required": ["value"]
+              }
+            },
+            "virtualNetworkRules": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "description": "Virtual network subnet resource ID"
+                  }
+                },
+                "required": ["id"]
+              }
+            }
+          }
+        }
+      },
+      "required": ["tenantId", "sku"]
+    },
+    "tags": {
+      "type": "object",
+      "description": "Resource tags",
+      "additionalProperties": {
+        "type": "string"
+      }
+    }
+  },
+  "required": ["apiVersion", "type", "name", "location", "properties"],
+  "additionalProperties": false
+}

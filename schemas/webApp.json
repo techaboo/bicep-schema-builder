@@ -1,0 +1,109 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "title": "Web App Schema",
+  "description": "Schema for Azure App Service Web App resource in Bicep",
+  "properties": {
+    "apiVersion": {
+      "type": "string",
+      "enum": ["2020-12-01", "2021-01-15", "2021-02-01", "2022-03-01"],
+      "description": "The API version for the web app resource"
+    },
+    "type": {
+      "type": "string",
+      "const": "Microsoft.Web/sites",
+      "description": "The resource type for Azure Web App"
+    },
+    "name": {
+      "type": "string",
+      "pattern": "^[a-zA-Z0-9][a-zA-Z0-9-]{1,58}[a-zA-Z0-9]$",
+      "description": "Web app name (2-60 characters, alphanumeric and hyphens)"
+    },
+    "location": {
+      "type": "string",
+      "description": "Azure region where the web app will be created"
+    },
+    "properties": {
+      "type": "object",
+      "properties": {
+        "serverFarmId": {
+          "type": "string",
+          "description": "Resource ID of the App Service Plan"
+        },
+        "siteConfig": {
+          "type": "object",
+          "properties": {
+            "appSettings": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string"
+                  },
+                  "value": {
+                    "type": "string"
+                  }
+                },
+                "required": ["name", "value"]
+              }
+            },
+            "connectionStrings": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string"
+                  },
+                  "connectionString": {
+                    "type": "string"
+                  },
+                  "type": {
+                    "type": "string",
+                    "enum": ["SQLServer", "SQLAzure", "Custom", "NotificationHub", "ServiceBus", "EventHub", "ApiHub", "DocDb", "RedisCache", "PostgreSQL", "MySQL"]
+                  }
+                },
+                "required": ["name", "connectionString", "type"]
+              }
+            },
+            "linuxFxVersion": {
+              "type": "string",
+              "description": "Linux app framework and version"
+            },
+            "windowsFxVersion": {
+              "type": "string", 
+              "description": "Windows container image"
+            },
+            "alwaysOn": {
+              "type": "boolean",
+              "description": "Always on setting"
+            },
+            "httpLoggingEnabled": {
+              "type": "boolean",
+              "description": "HTTP logging enabled"
+            }
+          }
+        },
+        "httpsOnly": {
+          "type": "boolean",
+          "description": "HTTPS only configuration"
+        },
+        "clientAffinityEnabled": {
+          "type": "boolean",
+          "description": "Client affinity enabled"
+        }
+      },
+      "required": ["serverFarmId"]
+    },
+    "tags": {
+      "type": "object",
+      "description": "Resource tags",
+      "additionalProperties": {
+        "type": "string"
+      }
+    }
+  },
+  "required": ["apiVersion", "type", "name", "location", "properties"],
+  "additionalProperties": false
+}

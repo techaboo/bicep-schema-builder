@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bicep Schema Builder</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="app">
+        <header>
+            <h1>🔧 Bicep Schema Builder</h1>
+            <p>Interactive tool for building and validating Azure Bicep schemas</p>
+        </header>
+        
+        <main>
+            <section class="upload-section">
+                <h2>Upload Schema File</h2>
+                <div class="file-upload">
+                    <input type="file" id="schemaFile" accept=".json" />
+                    <label for="schemaFile">Choose JSON Schema File</label>
+                </div>
+            </section>
+            
+            <section class="editor-section">
+                <h2>Schema Editor</h2>
+                <textarea id="schemaEditor" placeholder="Paste your JSON schema here or upload a file..."></textarea>
+                <div class="editor-actions">
+                    <button id="validateBtn">Validate Schema</button>
+                    <button id="formatBtn">Format JSON</button>
+                    <button id="downloadBtn">Download Schema</button>
+                </div>
+            </section>
+            
+            <section class="output-section">
+                <h2>Validation Results</h2>
+                <div id="validationOutput" class="output-panel">
+                    <p class="placeholder">Upload or paste a schema to see validation results...</p>
+                </div>
+            </section>
+            
+            <section class="templates-section">
+                <h2>Schema Templates</h2>
+                <div class="template-grid">
+                    <button class="template-btn" data-template="storage">Storage Account</button>
+                    <button class="template-btn" data-template="webapp">Web App</button>
+                    <button class="template-btn" data-template="vm">Virtual Machine</button>
+                    <button class="template-btn" data-template="keyvault">Key Vault</button>
+                </div>
+            </section>
+        </main>
+    </div>
+    
+    <script src="utils/schemaParser.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
