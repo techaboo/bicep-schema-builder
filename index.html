@@ -70,12 +70,34 @@
             </section>
             
             <section class="editor-section">
-                <h2>Schema Editor</h2>
+                <div class="section-header">
+                    <h2>Schema Editor</h2>
+                    <div class="validation-mode-toggle">
+                        <label class="mode-label">What are you validating?</label>
+                        <div class="toggle-buttons">
+                            <button id="resourceModeBtn" class="mode-btn active" data-mode="resource" title="Validate individual resource JSON schemas (for schema definitions)">
+                                📄 Resource Schema
+                            </button>
+                            <button id="templateModeBtn" class="mode-btn" data-mode="template" title="Validate complete ARM deployment templates (for actual deployments)">
+                                📦 Full ARM Template
+                            </button>
+                        </div>
+                        <div class="mode-indicator">
+                            <span id="currentMode">📄 Resource Schema</span>
+                            <span id="modeDescription" class="mode-description">For validating schema definitions</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="editor-help-banner" id="editorHelpBanner">
+                    <span class="help-icon">💡</span>
+                    <span id="helpText">Paste a resource schema JSON or click a template below to get started</span>
+                </div>
                 <textarea id="schemaEditor" placeholder="Paste your JSON schema here or upload a file..."></textarea>
                 <div class="editor-actions">
-                    <button id="validateBtn">Validate Schema</button>
-                    <button id="formatBtn">Format JSON</button>
-                    <button id="downloadBtn">Download Schema</button>
+                    <button id="validateBtn" class="primary-btn">✅ Validate</button>
+                    <button id="formatBtn">✨ Format JSON</button>
+                    <button id="downloadBtn">💾 Download</button>
+                    <button id="exportBicep" class="bicep-export-btn">🔄 Convert to Bicep</button>
                 </div>
             </section>
             
@@ -87,16 +109,30 @@
             </section>
             
             <section class="templates-section">
-                <h2>Schema Templates</h2>
-                <div class="template-grid">
-                    <button class="template-btn" data-template="storage">🗄️ Storage Account</button>
-                    <button class="template-btn" data-template="webapp">🌐 Web App</button>
-                    <button class="template-btn" data-template="vm">💻 Virtual Machine</button>
-                    <button class="template-btn" data-template="keyvault">🔐 Key Vault</button>
-                    <button class="template-btn" data-template="sqldatabase">🗃️ SQL Database</button>
-                    <button class="template-btn" data-template="functions">⚡ Azure Functions</button>
-                    <button class="template-btn" data-template="appplan">📋 App Service Plan</button>
-                    <button class="template-btn" data-template="vnet">🌐 Virtual Network</button>
+                <h2>📋 Load Template</h2>
+                <div class="template-category">
+                    <h3 class="category-title">🆕 Complete ARM Template Schema</h3>
+                    <p class="category-description">Master schema with ALL Azure resource types - use for validating full deployment templates</p>
+                    <div class="template-grid-featured">
+                        <button class="template-btn template-highlight" data-template="armtemplate" title="Load the complete ARM deployment template schema (includes all Azure resources)">
+                            📦 ARM Deployment Template
+                            <span class="template-badge">Full Template</span>
+                        </button>
+                    </div>
+                </div>
+                <div class="template-category">
+                    <h3 class="category-title">📄 Individual Resource Schemas</h3>
+                    <p class="category-description">Schemas for specific Azure resource types</p>
+                    <div class="template-grid">
+                        <button class="template-btn" data-template="storage" title="Storage Account resource schema">🗄️ Storage Account</button>
+                        <button class="template-btn" data-template="webapp" title="Web App resource schema">🌐 Web App</button>
+                        <button class="template-btn" data-template="vm" title="Virtual Machine resource schema">💻 Virtual Machine</button>
+                        <button class="template-btn" data-template="keyvault" title="Key Vault resource schema">🔐 Key Vault</button>
+                        <button class="template-btn" data-template="sqldatabase" title="SQL Database resource schema">🗃️ SQL Database</button>
+                        <button class="template-btn" data-template="functions" title="Azure Functions resource schema">⚡ Azure Functions</button>
+                        <button class="template-btn" data-template="appplan" title="App Service Plan resource schema">📋 App Service Plan</button>
+                        <button class="template-btn" data-template="vnet" title="Virtual Network resource schema">🌐 Virtual Network</button>
+                    </div>
                 </div>
             </section>
             

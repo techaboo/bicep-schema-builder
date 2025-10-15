@@ -4,6 +4,8 @@ class SchemaParser {
         this.schemas = new Map();
         this.validationRules = new Map();
         this.bicepPatterns = this.initializeBicepPatterns();
+        this.armTemplateSchema = null;
+        this.validationMode = 'resource'; // 'resource' or 'template'
     }
 
     /**
@@ -376,11 +378,259 @@ class SchemaParser {
 
     hasValidationRules(schema) {
         if (!schema.properties) return false;
-        
-        return Object.values(schema.properties).some(prop => 
-            prop.pattern || prop.enum || prop.minimum || prop.maximum || 
+
+        return Object.values(schema.properties).some(prop =>
+            prop.pattern || prop.enum || prop.minimum || prop.maximum ||
             prop.minLength || prop.maxLength
         );
+    }
+
+    /**
+     * Load ARM Deployment Template Schema
+     * @returns {Promise<Object>} Promise resolving to ARM template schema
+     */
+    async loadArmDeploymentSchema() {
+        try {
+            const response = await fetch('./schemas/armDeploymentTemplate.json');
+            if (!response.ok) {
+                throw new Error('Failed to load ARM template schema');
+            }
+            this.armTemplateSchema = await response.json();
+            return this.armTemplateSchema;
+        } catch (error) {
+            console.error('Error loading ARM template schema:', error);
+            throw error;
+        }
+    }
+
+    /**
+     * Set validation mode
+     * @param {string} mode - 'resource' or 'template'
+     */
+    setValidationMode(mode) {
+        if (!['resource', 'template'].includes(mode)) {
+            throw new Error('Invalid validation mode. Must be "resource" or "template"');
+        }
+        this.validationMode = mode;
+    }
+
+    /**
+     * Get current validation mode
+     * @returns {string} Current validation mode
+     */
+    getValidationMode() {
+        return this.validationMode;
+    }
+
+    /**
+     * Validate a complete ARM deployment template
+     * @param {Object} template - The ARM template to validate
+     * @returns {Object} Validation result
+     */
+    validateCompleteTemplate(template) {
+        const errors = [];
+        const warnings = [];
+
+        try {
+            // Check if it's a valid object
+            if (!template || typeof template !== 'object') {
+                errors.push('Template must be a valid object');
+                return { valid: false, errors, warnings };
+            }
+
+            // Required fields for ARM template
+            const requiredFields = ['$schema', 'contentVersion', 'resources'];
+            requiredFields.forEach(field => {
+                if (!template[field]) {
+                    errors.push(`Missing required field: ${field}`);
+                }
+            });
+
+            // Validate $schema
+            if (template.$schema && !template.$schema.includes('deploymentTemplate.json')) {
+                warnings.push('$schema should reference a deployment template schema');
+            }
+
+            // Validate contentVersion format (X.X.X.X)
+            if (template.contentVersion) {
+                const versionPattern = /^\d+\.\d+\.\d+\.\d+$/;
+                if (!versionPattern.test(template.contentVersion)) {
+                    errors.push('contentVersion must be in format X.X.X.X (e.g., 1.0.0.0)');
+                }
+            }
+
+            // Validate resources array
+            if (template.resources) {
+                if (!Array.isArray(template.resources)) {
+                    errors.push('resources must be an array');
+                } else {
+                    // Validate each resource
+                    const resourceValidation = this.validateTemplateResources(template.resources);
+                    errors.push(...resourceValidation.errors);
+                    warnings.push(...resourceValidation.warnings);
+                }
+            }
+
+            // Validate parameters if present
+            if (template.parameters) {
+                const paramValidation = this.validateTemplateParameters(template.parameters);
+                errors.push(...paramValidation.errors);
+                warnings.push(...paramValidation.warnings);
+            }
+
+            // Validate outputs if present
+            if (template.outputs) {
+                const outputValidation = this.validateTemplateOutputs(template.outputs);
+                errors.push(...outputValidation.errors);
+                warnings.push(...outputValidation.warnings);
+            }
+
+            // Validate variables if present
+            if (template.variables && typeof template.variables !== 'object') {
+                errors.push('variables must be an object');
+            }
+
+            return {
+                valid: errors.length === 0,
+                errors,
+                warnings,
+                resourceCount: template.resources ? template.resources.length : 0,
+                hasParameters: !!template.parameters,
+                hasOutputs: !!template.outputs,
+                hasVariables: !!template.variables
+            };
+
+        } catch (error) {
+            errors.push(`Validation error: ${error.message}`);
+            return { valid: false, errors, warnings };
+        }
+    }
+
+    /**
+     * Validate template resources array
+     * @param {Array} resources - Resources array from template
+     * @returns {Object} Validation result
+     */
+    validateTemplateResources(resources) {
+        const errors = [];
+        const warnings = [];
+
+        resources.forEach((resource, index) => {
+            // Required fields for each resource
+            const requiredFields = ['type', 'name', 'apiVersion'];
+            requiredFields.forEach(field => {
+                if (!resource[field]) {
+                    errors.push(`Resource ${index}: Missing required field "${field}"`);
+                }
+            });
+
+            // Validate resource type format
+            if (resource.type && !resource.type.includes('/')) {
+                errors.push(`Resource ${index}: Invalid resource type format. Should be Provider/Type (e.g., Microsoft.Storage/storageAccounts)`);
+            }
+
+            // Validate API version format
+            if (resource.apiVersion) {
+                const apiVersionPattern = /^\d{4}-\d{2}-\d{2}(-preview)?$/;
+                if (!apiVersionPattern.test(resource.apiVersion)) {
+                    warnings.push(`Resource ${index}: API version should be in YYYY-MM-DD format`);
+                }
+            }
+
+            // Check for location (required for most resources)
+            if (!resource.location && resource.type && !resource.type.includes('Microsoft.Resources/deployments')) {
+                warnings.push(`Resource ${index}: Missing "location" property (required for most resource types)`);
+            }
+        });
+
+        return { errors, warnings };
+    }
+
+    /**
+     * Validate template parameters
+     * @param {Object} parameters - Parameters object from template
+     * @returns {Object} Validation result
+     */
+    validateTemplateParameters(parameters) {
+        const errors = [];
+        const warnings = [];
+
+        Object.keys(parameters).forEach(paramName => {
+            const param = parameters[paramName];
+
+            // Each parameter must have a type
+            if (!param.type) {
+                errors.push(`Parameter "${paramName}": Missing required "type" property`);
+            }
+
+            // Validate parameter type
+            const validTypes = ['string', 'securestring', 'int', 'bool', 'object', 'secureObject', 'array'];
+            if (param.type && !validTypes.includes(param.type)) {
+                errors.push(`Parameter "${paramName}": Invalid type "${param.type}". Must be one of: ${validTypes.join(', ')}`);
+            }
+
+            // Warn about missing descriptions
+            if (!param.metadata || !param.metadata.description) {
+                warnings.push(`Parameter "${paramName}": Consider adding a description in metadata`);
+            }
+
+            // Check for allowed values
+            if (param.allowedValues && !Array.isArray(param.allowedValues)) {
+                errors.push(`Parameter "${paramName}": allowedValues must be an array`);
+            }
+        });
+
+        return { errors, warnings };
+    }
+
+    /**
+     * Validate template outputs
+     * @param {Object} outputs - Outputs object from template
+     * @returns {Object} Validation result
+     */
+    validateTemplateOutputs(outputs) {
+        const errors = [];
+        const warnings = [];
+
+        Object.keys(outputs).forEach(outputName => {
+            const output = outputs[outputName];
+
+            // Each output must have a type
+            if (!output.type) {
+                errors.push(`Output "${outputName}": Missing required "type" property`);
+            }
+
+            // Each output must have a value (or copy for loops)
+            if (!output.value && !output.copy) {
+                errors.push(`Output "${outputName}": Missing required "value" or "copy" property`);
+            }
+
+            // Validate output type
+            const validTypes = ['string', 'securestring', 'int', 'bool', 'object', 'secureObject', 'array'];
+            if (output.type && !validTypes.includes(output.type)) {
+                errors.push(`Output "${outputName}": Invalid type "${output.type}". Must be one of: ${validTypes.join(', ')}`);
+            }
+        });
+
+        return { errors, warnings };
+    }
+
+    /**
+     * Check if object is a complete ARM template or a resource definition
+     * @param {Object} obj - Object to check
+     * @returns {boolean} True if it looks like a complete ARM template
+     */
+    isArmTemplate(obj) {
+        if (!obj || typeof obj !== 'object') return false;
+
+        // ARM templates have these characteristics
+        const hasTemplateSchema = obj.$schema && obj.$schema.includes('deploymentTemplate.json');
+        const hasContentVersion = !!obj.contentVersion;
+        const hasResources = Array.isArray(obj.resources);
+
+        // If it has at least 2 of these 3, it's likely an ARM template
+        const templateIndicators = [hasTemplateSchema, hasContentVersion, hasResources].filter(Boolean).length;
+        return templateIndicators >= 2;
     }
 
     // Schema management methods

@@ -98,7 +98,13 @@ function setupEventListeners() {
     // Editor real-time validation
     const editor = document.getElementById('schemaEditor');
     editor.addEventListener('input', debounce(validateSchemaRealTime, 1000));
-    
+
+    // Validation mode toggle buttons
+    const resourceModeBtn = document.getElementById('resourceModeBtn');
+    const templateModeBtn = document.getElementById('templateModeBtn');
+    if (resourceModeBtn) resourceModeBtn.addEventListener('click', () => setValidationMode('resource'));
+    if (templateModeBtn) templateModeBtn.addEventListener('click', () => setValidationMode('template'));
+
     // Initialize theme
     initializeTheme();
 }
@@ -126,27 +132,47 @@ async function handleFileUpload(event) {
 
 function validateSchema() {
     const editorContent = document.getElementById('schemaEditor').value.trim();
-    
+
     if (!editorContent) {
         showError('❌ Please provide a schema to validate');
         return;
     }
-    
+
     try {
         showLoading('Validating schema...');
-        
-        const schema = schemaParser.parseSchema(editorContent);
-        currentSchema = schema;
-        
-        // Perform validation checks
-        const validationResults = performDetailedValidation(schema);
-        
-        if (validationResults.isValid) {
-            showValidationSuccess(validationResults);
+
+        const parsedContent = JSON.parse(editorContent);
+        currentSchema = parsedContent;
+
+        // Check validation mode
+        const validationMode = schemaParser.getValidationMode();
+
+        let validationResults;
+
+        // Auto-detect if content is ARM template
+        if (schemaParser.isArmTemplate(parsedContent)) {
+            // Automatically switch to template mode if we detect an ARM template
+            if (validationMode === 'resource') {
+                setValidationMode('template');
+            }
+            validationResults = schemaParser.validateCompleteTemplate(parsedContent);
+            showTemplateValidationResults(validationResults);
+        } else if (validationMode === 'template') {
+            // User selected template mode, validate as ARM template
+            validationResults = schemaParser.validateCompleteTemplate(parsedContent);
+            showTemplateValidationResults(validationResults);
         } else {
-            showValidationErrors(validationResults);
+            // Resource schema mode
+            const schema = schemaParser.parseSchema(editorContent);
+            validationResults = performDetailedValidation(schema);
+
+            if (validationResults.isValid) {
+                showValidationSuccess(validationResults);
+            } else {
+                showValidationErrors(validationResults);
+            }
         }
-        
+
     } catch (error) {
         showError(`❌ Validation failed: ${error.message}`);
     }
@@ -267,6 +293,7 @@ function downloadSchema() {
 
 function loadTemplate(templateName) {
     const templates = {
+        armtemplate: 'schemas/armDeploymentTemplate.json',
         storage: 'schemas/storageAccount.json',
         webapp: 'schemas/webApp.json',
         vm: 'schemas/virtualMachine.json',
@@ -276,13 +303,18 @@ function loadTemplate(templateName) {
         appplan: 'schemas/appServicePlan.json',
         vnet: 'schemas/virtualNetwork.json'
     };
-    
+
     const templatePath = templates[templateName];
     if (!templatePath) {
         showError(`❌ Template "${templateName}" not found`);
         return;
     }
-    
+
+    // If loading ARM template, switch to template mode
+    if (templateName === 'armtemplate') {
+        setValidationMode('template');
+    }
+
     // Load template from file
     fetch(templatePath)
         .then(response => response.json())
@@ -363,18 +395,90 @@ function showValidationSuccess(results) {
 function showValidationErrors(results) {
     const output = document.getElementById('validationOutput');
     output.className = 'output-panel error';
-    
+
     let message = '❌ Schema validation failed!\n\n';
-    
+
     if (results.errors.length > 0) {
         message += '🚨 Errors:\n' + results.errors.map(error => `  • ${error}`).join('\n') + '\n\n';
     }
-    
+
     if (results.warnings.length > 0) {
         message += '⚠️ Warnings:\n' + results.warnings.map(warning => `  • ${warning}`).join('\n');
     }
-    
+
     output.textContent = message;
+}
+
+function showTemplateValidationResults(results) {
+    const output = document.getElementById('validationOutput');
+
+    if (results.valid) {
+        output.className = 'output-panel success';
+
+        let message = '✅ ARM Template is valid!\n\n';
+        message += '📦 Template Information:\n';
+        message += `  • Resource Count: ${results.resourceCount}\n`;
+        message += `  • Has Parameters: ${results.hasParameters ? 'Yes' : 'No'}\n`;
+        message += `  • Has Variables: ${results.hasVariables ? 'Yes' : 'No'}\n`;
+        message += `  • Has Outputs: ${results.hasOutputs ? 'Yes' : 'No'}\n\n`;
+
+        if (results.warnings.length > 0) {
+            message += '⚠️ Warnings:\n' + results.warnings.map(warning => `  • ${warning}`).join('\n');
+        }
+
+        output.textContent = message;
+    } else {
+        output.className = 'output-panel error';
+
+        let message = '❌ ARM Template validation failed!\n\n';
+
+        if (results.errors.length > 0) {
+            message += '🚨 Errors:\n' + results.errors.map(error => `  • ${error}`).join('\n') + '\n\n';
+        }
+
+        if (results.warnings.length > 0) {
+            message += '⚠️ Warnings:\n' + results.warnings.map(warning => `  • ${warning}`).join('\n');
+        }
+
+        output.textContent = message;
+    }
+}
+
+function setValidationMode(mode) {
+    // Update schema parser mode
+    schemaParser.setValidationMode(mode);
+
+    // Update UI
+    const resourceModeBtn = document.getElementById('resourceModeBtn');
+    const templateModeBtn = document.getElementById('templateModeBtn');
+    const currentModeText = document.getElementById('currentMode');
+    const modeDescription = document.getElementById('modeDescription');
+    const helpText = document.getElementById('helpText');
+    const helpBanner = document.getElementById('editorHelpBanner');
+
+    if (mode === 'resource') {
+        resourceModeBtn.classList.add('active');
+        templateModeBtn.classList.remove('active');
+        currentModeText.textContent = '📄 Resource Schema';
+        if (modeDescription) modeDescription.textContent = 'For validating schema definitions';
+        if (helpText) helpText.textContent = 'Paste a resource schema JSON or click a template below to get started';
+        if (helpBanner) helpBanner.style.background = 'linear-gradient(135deg, #e3f2fd 0%, #f3e5f5 100%)';
+        document.getElementById('schemaEditor').placeholder = 'Paste your resource JSON schema here or upload a file...';
+    } else if (mode === 'template') {
+        templateModeBtn.classList.add('active');
+        resourceModeBtn.classList.remove('active');
+        currentModeText.textContent = '📦 Full ARM Template';
+        if (modeDescription) modeDescription.textContent = 'For validating deployment templates';
+        if (helpText) helpText.textContent = 'Paste a complete ARM deployment template with resources, parameters, and outputs';
+        if (helpBanner) helpBanner.style.background = 'linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%)';
+        document.getElementById('schemaEditor').placeholder = 'Paste your complete ARM deployment template here or upload a file...';
+    }
+
+    // Re-validate if there's content
+    const editorContent = document.getElementById('schemaEditor').value.trim();
+    if (editorContent) {
+        validateSchema();
+    }
 }
 
 function debounce(func, wait) {

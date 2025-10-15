@@ -6,7 +6,7 @@ An interactive web tool for building, validating, and managing Azure Bicep JSON 
 ![JavaScript](https://img.shields.io/badge/JavaScript-ES6-yellow)
 ![Schema](https://img.shields.io/badge/JSON-Schema-green)
 ![Build](https://img.shields.io/badge/build-passing-brightgreen)
-![Tests](https://img.shields.io/badge/tests-8%2F8%20passing-success)
+![Tests](https://img.shields.io/badge/tests-9%2F9%20passing-success)
 
 ## ✨ Features
 
@@ -17,6 +17,8 @@ An interactive web tool for building, validating, and managing Azure Bicep JSON 
 - **📋 Template Library**: Pre-built templates for common Azure resources
 - **🎨 Format & Download**: Format JSON and download validated schemas
 - **🔍 Bicep-Specific Validation**: Specialized checks for Azure Bicep patterns
+- **📦 ARM Template Validation** (NEW!): Full Azure Resource Manager template validation
+- **🔄 Dual Validation Modes**: Switch between resource schema and full template validation
 - **🌙 Dark Mode**: Toggle between light and dark themes
 - **☁️ Azure Integration**: Connect to Azure for live resource validation
 - **🚀 Deployment Builder**: Select and configure multiple resources for deployment
@@ -35,7 +37,8 @@ An interactive web tool for building, validating, and managing Azure Bicep JSON 
 
 ## 🚀 Supported Azure Resources
 
-### JSON Schemas (8)
+### JSON Schemas (9)
+- 🆕 **ARM Deployment Template** - Complete Azure Resource Manager template schema with all resource types
 - ✅ **Storage Accounts** (`Microsoft.Storage/storageAccounts`) - Updated with 2023 APIs
 - ✅ **Web Apps** (`Microsoft.Web/sites`)
 - ✅ **Virtual Machines** (`Microsoft.Compute/virtualMachines`)
@@ -78,7 +81,8 @@ bicep-schema-builder/
 │   ├── schemaParser.js        # Schema parsing and validation
 │   └── azureResourceGraph.js  # Azure Resource Graph integration
 │
-├── schemas/                   # 8 JSON Schema definitions
+├── schemas/                   # 9 JSON Schema definitions
+│   ├── armDeploymentTemplate.json # ARM Deployment Template schema (NEW!)
 │   ├── storageAccount.json    # Storage Account schema
 │   ├── webApp.json            # Web App schema
 │   ├── virtualMachine.json    # VM schema
@@ -234,12 +238,25 @@ az deployment group create \
 
 ## 🔧 Features in Detail
 
-### Schema Validation
+### Dual Validation Modes
+
+#### Resource Schema Mode
+Validates individual Azure resource JSON schemas:
 - **JSON Syntax Checking**: Ensures valid JSON structure
 - **Schema Structure Validation**: Validates JSON Schema compliance (Draft-07)
 - **Bicep Pattern Recognition**: Identifies and validates Bicep-specific patterns
 - **Resource Type Validation**: Checks against known Azure resource types
 - **API Version Validation**: Ensures proper API version format (YYYY-MM-DD)
+
+#### ARM Template Mode (NEW!)
+Validates complete Azure Resource Manager deployment templates:
+- **Template Structure Validation**: Validates required fields ($schema, contentVersion, resources)
+- **Resource Array Validation**: Validates each resource in the template
+- **Parameter Validation**: Checks parameter types and required properties
+- **Output Validation**: Validates output definitions and types
+- **Variables Validation**: Ensures proper variable object structure
+- **Auto-Detection**: Automatically switches to template mode when ARM templates are detected
+- **Comprehensive Reporting**: Shows resource count, parameters, variables, and outputs
 
 ### Template System
 Each Bicep template includes:
@@ -427,10 +444,11 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## 📊 Project Status
 
 ![Build Status](https://img.shields.io/badge/build-passing-brightgreen)
-![Tests](https://img.shields.io/badge/tests-8%2F8%20passing-success)
+![Tests](https://img.shields.io/badge/tests-9%2F9%20passing-success)
 ![Templates](https://img.shields.io/badge/templates-7%2F7%20building-success)
+![Schemas](https://img.shields.io/badge/schemas-9%20(incl.%20ARM%20template)-blue)
 ![Coverage](https://img.shields.io/badge/coverage-100%25-brightgreen)
-![Version](https://img.shields.io/badge/version-2.0.0-blue)
+![Version](https://img.shields.io/badge/version-2.1.0-blue)
 
 ---
 
