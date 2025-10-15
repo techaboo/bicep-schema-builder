@@ -1305,6 +1305,19 @@ textarea:focus {
     box-shadow: 0 4px 12px rgba(255, 107, 107, 0.4);
 }
 
+.clear-btn {
+    background: linear-gradient(45deg, #6c757d, #5a6268) !important;
+    color: white !important;
+    font-weight: 500;
+    border: 2px solid rgba(255, 255, 255, 0.2);
+}
+
+.clear-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(108, 117, 125, 0.4);
+    background: linear-gradient(45deg, #5a6268, #545b62) !important;
+}
+
 /* Template Categories */
 .template-category {
     margin-bottom: 30px;

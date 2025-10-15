@@ -35,6 +35,8 @@ function setupEventListeners() {
     document.getElementById('validateBtn').addEventListener('click', validateSchema);
     document.getElementById('formatBtn').addEventListener('click', formatJSON);
     document.getElementById('downloadBtn').addEventListener('click', downloadSchema);
+    const clearEditorBtn = document.getElementById('clearEditorBtn');
+    if (clearEditorBtn) clearEditorBtn.addEventListener('click', clearEditor);
     
     // Template buttons
     const templateButtons = document.querySelectorAll('.template-btn');
@@ -248,18 +250,42 @@ function checkBicepProperties(properties, results) {
 function formatJSON() {
     const editor = document.getElementById('schemaEditor');
     const content = editor.value.trim();
-    
+
     if (!content) {
         showError('❌ No content to format');
         return;
     }
-    
+
     try {
         const parsed = JSON.parse(content);
         editor.value = JSON.stringify(parsed, null, 2);
         showSuccess('✅ JSON formatted successfully!');
     } catch (error) {
         showError(`❌ Cannot format invalid JSON: ${error.message}`);
+    }
+}
+
+function clearEditor() {
+    const editor = document.getElementById('schemaEditor');
+    const content = editor.value.trim();
+
+    if (!content) {
+        showSuccess('✅ Editor is already empty');
+        return;
+    }
+
+    if (confirm('Are you sure you want to clear the editor?\n\nThis action cannot be undone.')) {
+        editor.value = '';
+        currentSchema = null;
+        document.getElementById('validationOutput').innerHTML = '<p class="placeholder">Upload or paste a schema to see validation results...</p>';
+        document.getElementById('validationOutput').className = 'output-panel';
+        editor.style.borderColor = '';
+        showSuccess('✅ Editor cleared successfully!');
+
+        // Track clear action
+        if (typeof window.trackEvent === 'function') {
+            window.trackEvent('editor_clear', 'Editor', 'clear');
+        }
     }
 }
 
@@ -445,6 +471,34 @@ function showTemplateValidationResults(results) {
 }
 
 function setValidationMode(mode) {
+    // Check if user is switching modes with content
+    const editorContent = document.getElementById('schemaEditor').value.trim();
+    const currentMode = schemaParser.getValidationMode();
+
+    if (editorContent && currentMode !== mode) {
+        const modeNames = {
+            'resource': 'Resource Schema',
+            'template': 'ARM Template'
+        };
+
+        const confirmMessage = `You're switching from ${modeNames[currentMode]} to ${modeNames[mode]} mode.\n\n` +
+                              `Do you want to:\n` +
+                              `• OK - Keep the current content and re-validate in the new mode\n` +
+                              `• Cancel - Stay in ${modeNames[currentMode]} mode`;
+
+        if (!confirm(confirmMessage)) {
+            // User cancelled - revert the button state
+            if (currentMode === 'resource') {
+                document.getElementById('resourceModeBtn').classList.add('active');
+                document.getElementById('templateModeBtn').classList.remove('active');
+            } else {
+                document.getElementById('templateModeBtn').classList.add('active');
+                document.getElementById('resourceModeBtn').classList.remove('active');
+            }
+            return;
+        }
+    }
+
     // Update schema parser mode
     schemaParser.setValidationMode(mode);
 
@@ -475,7 +529,6 @@ function setValidationMode(mode) {
     }
 
     // Re-validate if there's content
-    const editorContent = document.getElementById('schemaEditor').value.trim();
     if (editorContent) {
         validateSchema();
     }
@@ -881,7 +934,7 @@ param imageReference object = {
 function generateVariables(schema, resourceType) {
     let variables = `// === VARIABLES ===
 
-var resourceNameFormatted = toLower('${resourcePrefix}-${getResourceNameFromType(resourceType)}-${environment}')
+var resourceNameFormatted = toLower(replace(resourceName, ' ', '-'))
 var commonTags = union(tags, {
   ResourceType: '${resourceType}'
   DeployedBy: 'Bicep Schema Builder'
