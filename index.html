@@ -25,6 +25,32 @@
     <!-- Favicon -->
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🔧</text></svg>">
     
+    <!-- Google Analytics 4 -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=GA_MEASUREMENT_ID"></script>
+    <script>
+        // Replace GA_MEASUREMENT_ID with your actual Google Analytics 4 Measurement ID
+        const GA_MEASUREMENT_ID = 'GA_MEASUREMENT_ID'; // Update this with your actual GA4 ID
+        
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', GA_MEASUREMENT_ID, {
+            page_title: 'Bicep Schema Builder',
+            page_location: window.location.href
+        });
+        
+        // Custom event tracking function
+        window.trackEvent = function(action, category = 'User Interaction', label = '') {
+            if (typeof gtag !== 'undefined') {
+                gtag('event', action, {
+                    event_category: category,
+                    event_label: label,
+                    value: 1
+                });
+            }
+        };
+    </script>
+    
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -63,16 +89,42 @@
             <section class="templates-section">
                 <h2>Schema Templates</h2>
                 <div class="template-grid">
-                    <button class="template-btn" data-template="storage">Storage Account</button>
-                    <button class="template-btn" data-template="webapp">Web App</button>
-                    <button class="template-btn" data-template="vm">Virtual Machine</button>
-                    <button class="template-btn" data-template="keyvault">Key Vault</button>
+                    <button class="template-btn" data-template="storage">🗄️ Storage Account</button>
+                    <button class="template-btn" data-template="webapp">🌐 Web App</button>
+                    <button class="template-btn" data-template="vm">💻 Virtual Machine</button>
+                    <button class="template-btn" data-template="keyvault">🔐 Key Vault</button>
+                    <button class="template-btn" data-template="sqldatabase">🗃️ SQL Database</button>
+                    <button class="template-btn" data-template="functions">⚡ Azure Functions</button>
+                    <button class="template-btn" data-template="appplan">📋 App Service Plan</button>
+                    <button class="template-btn" data-template="vnet">🌐 Virtual Network</button>
+                </div>
+            </section>
+            
+            <section class="azure-integration-section">
+                <h2>☁️ Azure Integration</h2>
+                <div class="azure-controls">
+                    <button id="azureAuth" class="azure-btn">🔐 Connect to Azure</button>
+                    <button id="azureResourceTypes" class="azure-btn" disabled>📋 Browse Resource Types</button>
+                    <button id="azureValidate" class="azure-btn" disabled>✅ Validate with Azure</button>
+                </div>
+                <div id="azureStatus" class="azure-status">
+                    <p>🔒 Not connected to Azure. Connect to enable live resource validation.</p>
+                </div>
+            </section>
+            
+            <section class="theme-section">
+                <h2>⚙️ Settings</h2>
+                <div class="settings-controls">
+                    <button id="themeToggle" class="theme-btn">🌙 Dark Mode</button>
+                    <button id="exportYaml" class="export-btn">📄 Export YAML</button>
+                    <button id="exportBicep" class="export-btn">🔧 Export Bicep</button>
                 </div>
             </section>
         </main>
     </div>
     
     <script src="utils/schemaParser.js"></script>
+    <script src="utils/azureResourceGraph.js"></script>
     <script src="script.js"></script>
 </body>
 </html>

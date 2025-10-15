@@ -1,0 +1,162 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "title": "Azure Functions Schema",
+  "description": "Schema for Azure Functions App resource in Bicep",
+  "properties": {
+    "apiVersion": {
+      "type": "string",
+      "enum": ["2020-12-01", "2021-01-15", "2021-02-01", "2022-03-01"],
+      "description": "The API version for the function app resource"
+    },
+    "type": {
+      "type": "string",
+      "const": "Microsoft.Web/sites",
+      "description": "The resource type for Azure Function App"
+    },
+    "kind": {
+      "type": "string",
+      "enum": ["functionapp", "functionapp,linux"],
+      "description": "Function app kind"
+    },
+    "name": {
+      "type": "string",
+      "pattern": "^[a-zA-Z0-9][a-zA-Z0-9-]{1,58}[a-zA-Z0-9]$",
+      "description": "Function app name (2-60 characters, alphanumeric and hyphens)"
+    },
+    "location": {
+      "type": "string",
+      "description": "Azure region where the function app will be created"
+    },
+    "properties": {
+      "type": "object",
+      "properties": {
+        "serverFarmId": {
+          "type": "string",
+          "description": "Resource ID of the App Service Plan"
+        },
+        "siteConfig": {
+          "type": "object",
+          "properties": {
+            "appSettings": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string"
+                  },
+                  "value": {
+                    "type": "string"
+                  }
+                },
+                "required": ["name", "value"]
+              },
+              "description": "Function app settings"
+            },
+            "functionAppScaleLimit": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 1000,
+              "description": "Maximum number of workers for the function app"
+            },
+            "minimumElasticInstanceCount": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 20,
+              "description": "Minimum number of instances for Premium plan"
+            },
+            "use32BitWorkerProcess": {
+              "type": "boolean",
+              "description": "Use 32-bit worker process"
+            },
+            "linuxFxVersion": {
+              "type": "string",
+              "description": "Linux runtime stack (e.g., 'DOTNET|6.0', 'NODE|16', 'PYTHON|3.9')"
+            },
+            "powerShellVersion": {
+              "type": "string",
+              "enum": ["~7", "7.0", "7.2"],
+              "description": "PowerShell version for PowerShell functions"
+            },
+            "netFrameworkVersion": {
+              "type": "string",
+              "enum": ["v4.0", "v6.0", "v7.0"],
+              "description": ".NET Framework version"
+            },
+            "nodeVersion": {
+              "type": "string",
+              "enum": ["~14", "~16", "~18"],
+              "description": "Node.js version"
+            },
+            "pythonVersion": {
+              "type": "string",
+              "enum": ["3.7", "3.8", "3.9", "3.10"],
+              "description": "Python version"
+            },
+            "javaVersion": {
+              "type": "string",
+              "enum": ["1.8", "11", "17"],
+              "description": "Java version"
+            },
+            "cors": {
+              "type": "object",
+              "properties": {
+                "allowedOrigins": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  },
+                  "description": "Allowed CORS origins"
+                },
+                "supportCredentials": {
+                  "type": "boolean",
+                  "description": "Support credentials in CORS"
+                }
+              }
+            }
+          }
+        },
+        "httpsOnly": {
+          "type": "boolean",
+          "description": "HTTPS only configuration"
+        },
+        "storageAccountRequired": {
+          "type": "boolean",
+          "description": "Storage account required for the function app"
+        },
+        "keyVaultReferenceIdentity": {
+          "type": "string",
+          "description": "Identity to use for Key Vault references"
+        }
+      },
+      "required": ["serverFarmId"]
+    },
+    "identity": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": ["None", "SystemAssigned", "UserAssigned", "SystemAssigned,UserAssigned"],
+          "description": "Managed identity type"
+        },
+        "userAssignedIdentities": {
+          "type": "object",
+          "description": "User assigned identities",
+          "additionalProperties": {
+            "type": "object"
+          }
+        }
+      }
+    },
+    "tags": {
+      "type": "object",
+      "description": "Resource tags",
+      "additionalProperties": {
+        "type": "string"
+      }
+    }
+  },
+  "required": ["apiVersion", "type", "kind", "name", "location", "properties"],
+  "additionalProperties": false
+}

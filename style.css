@@ -244,6 +244,142 @@ button:hover {
     }
 }
 
+/* Settings Section */
+.settings-controls {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 15px;
+}
+
+.theme-btn, .export-btn {
+    background: linear-gradient(45deg, #6f42c1, #e83e8c);
+    color: white;
+    padding: 15px 10px;
+    text-align: center;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+    border: none;
+    cursor: pointer;
+    font-weight: 500;
+}
+
+.theme-btn:hover, .export-btn:hover {
+    background: linear-gradient(45deg, #e83e8c, #6f42c1);
+    transform: translateY(-2px);
+}
+
+/* Dark Mode Styles */
+:root {
+    --bg-primary: #ffffff;
+    --bg-secondary: #f8f9fa;
+    --text-primary: #333333;
+    --text-secondary: #6c757d;
+    --border-color: #e0e0e0;
+    --shadow-color: rgba(0,0,0,0.1);
+    --gradient-primary: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+[data-theme="dark"] {
+    --bg-primary: #1a1a1a;
+    --bg-secondary: #2d2d2d;
+    --text-primary: #ffffff;
+    --text-secondary: #b0b0b0;
+    --border-color: #404040;
+    --shadow-color: rgba(0,0,0,0.3);
+    --gradient-primary: linear-gradient(135deg, #2d1b69 0%, #11998e 100%);
+}
+
+[data-theme="dark"] body {
+    background: var(--gradient-primary);
+    color: var(--text-primary);
+}
+
+[data-theme="dark"] section {
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    box-shadow: 0 10px 30px var(--shadow-color);
+}
+
+[data-theme="dark"] section:hover {
+    box-shadow: 0 15px 40px var(--shadow-color);
+}
+
+[data-theme="dark"] #schemaEditor {
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    border-color: var(--border-color);
+}
+
+[data-theme="dark"] .output-panel {
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    border-color: var(--border-color);
+}
+
+[data-theme="dark"] .placeholder {
+    color: var(--text-secondary);
+}
+
+[data-theme="dark"] .file-upload label {
+    background: linear-gradient(45deg, #2d1b69, #11998e);
+}
+
+[data-theme="dark"] .file-upload label:hover {
+    background: linear-gradient(45deg, #11998e, #2d1b69);
+}
+
+[data-theme="dark"] .template-btn {
+    background: linear-gradient(45deg, #495057, #343a40);
+    color: white;
+}
+
+[data-theme="dark"] .template-btn:hover {
+    background: linear-gradient(45deg, #343a40, #212529);
+}
+
+/* Enhanced Template Grid */
+.template-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 15px;
+}
+
+.template-btn {
+    background: linear-gradient(45deg, #6c757d, #495057);
+    color: white;
+    padding: 18px 15px;
+    text-align: center;
+    border-radius: 12px;
+    transition: all 0.3s ease;
+    border: none;
+    cursor: pointer;
+    font-weight: 500;
+    font-size: 14px;
+    position: relative;
+    overflow: hidden;
+}
+
+.template-btn::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+    transition: left 0.5s;
+}
+
+.template-btn:hover::before {
+    left: 100%;
+}
+
+.template-btn:hover {
+    background: linear-gradient(45deg, #495057, #343a40);
+    transform: translateY(-3px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.2);
+}
+
 /* Animation Classes */
 .fade-in {
     animation: fadeIn 0.5s ease-in;
@@ -252,4 +388,155 @@ button:hover {
 @keyframes fadeIn {
     from { opacity: 0; transform: translateY(20px); }
     to { opacity: 1; transform: translateY(0); }
+}
+
+/* Loading Animation */
+.loading {
+    position: relative;
+}
+
+.loading::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 20px;
+    height: 20px;
+    margin: -10px 0 0 -10px;
+    border: 2px solid #f3f3f3;
+    border-top: 2px solid #667eea;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Azure Integration Styles */
+.azure-controls {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 15px;
+    margin-bottom: 20px;
+}
+
+.azure-btn {
+    background: linear-gradient(45deg, #0078d4, #106ebe);
+    color: white;
+    padding: 15px 10px;
+    text-align: center;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+    border: none;
+    cursor: pointer;
+    font-weight: 500;
+    position: relative;
+    overflow: hidden;
+}
+
+.azure-btn:disabled {
+    background: linear-gradient(45deg, #6c757d, #5a6268);
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+
+.azure-btn:not(:disabled):hover {
+    background: linear-gradient(45deg, #106ebe, #005a9e);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0,120,212,0.3);
+}
+
+.azure-status {
+    padding: 15px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    font-size: 14px;
+}
+
+.azure-status p {
+    margin: 0;
+    color: var(--text-secondary);
+}
+
+[data-theme="dark"] .azure-btn {
+    background: linear-gradient(45deg, #1ba1e2, #0078d4);
+}
+
+[data-theme="dark"] .azure-btn:not(:disabled):hover {
+    background: linear-gradient(45d, #0078d4, #005a9e);
+}
+
+[data-theme="dark"] .azure-status {
+    background: var(--bg-primary);
+    border-color: var(--border-color);
+}
+
+/* Modal Styles */
+.modal-content {
+    box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+}
+
+[data-theme="dark"] .modal-content {
+    background: var(--bg-primary);
+    color: var(--text-primary);
+}
+
+/* Smooth Transitions */
+* {
+    transition: color 0.3s ease, background-color 0.3s ease, border-color 0.3s ease;
+}
+
+/* Enhanced Responsive Design */
+@media (max-width: 480px) {
+    .template-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .settings-controls {
+        grid-template-columns: 1fr;
+    }
+    
+    header h1 {
+        font-size: 1.8em;
+    }
+    
+    .editor-actions {
+        gap: 8px;
+    }
+    
+    button {
+        padding: 10px 16px;
+        font-size: 13px;
+    }
+}
+
+/* Accessibility Improvements */
+@media (prefers-reduced-motion: reduce) {
+    * {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+}
+
+/* Focus Styles */
+button:focus,
+input:focus,
+textarea:focus {
+    outline: 2px solid #667eea;
+    outline-offset: 2px;
+}
+
+/* High Contrast Mode */
+@media (prefers-contrast: high) {
+    button {
+        border: 2px solid currentColor;
+    }
+    
+    .template-btn, .theme-btn, .export-btn {
+        border: 2px solid white;
+    }
 }

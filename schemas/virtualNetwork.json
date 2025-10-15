@@ -1,0 +1,249 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "title": "Virtual Network Schema",
+  "description": "Schema for Azure Virtual Network resource in Bicep",
+  "properties": {
+    "apiVersion": {
+      "type": "string",
+      "enum": ["2020-11-01", "2021-02-01", "2021-05-01", "2022-01-01", "2022-07-01"],
+      "description": "The API version for the virtual network resource"
+    },
+    "type": {
+      "type": "string",
+      "const": "Microsoft.Network/virtualNetworks",
+      "description": "The resource type for Azure Virtual Network"
+    },
+    "name": {
+      "type": "string",
+      "pattern": "^[a-zA-Z0-9][a-zA-Z0-9-_.]{0,78}[a-zA-Z0-9_]$",
+      "description": "Virtual network name (2-80 characters, alphanumeric, hyphens, underscores, periods)"
+    },
+    "location": {
+      "type": "string",
+      "description": "Azure region where the virtual network will be created"
+    },
+    "properties": {
+      "type": "object",
+      "properties": {
+        "addressSpace": {
+          "type": "object",
+          "properties": {
+            "addressPrefixes": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "pattern": "^([0-9]{1,3}\\.){3}[0-9]{1,3}/([0-9]|[1-2][0-9]|3[0-2])$",
+                "description": "CIDR notation (e.g., 10.0.0.0/16)"
+              },
+              "minItems": 1,
+              "description": "List of address spaces for the virtual network"
+            }
+          },
+          "required": ["addressPrefixes"]
+        },
+        "subnets": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "string",
+                "pattern": "^[a-zA-Z0-9][a-zA-Z0-9-_.]{0,78}[a-zA-Z0-9_]$",
+                "description": "Subnet name"
+              },
+              "properties": {
+                "type": "object",
+                "properties": {
+                  "addressPrefix": {
+                    "type": "string",
+                    "pattern": "^([0-9]{1,3}\\.){3}[0-9]{1,3}/([0-9]|[1-2][0-9]|3[0-2])$",
+                    "description": "Subnet address prefix in CIDR notation"
+                  },
+                  "networkSecurityGroup": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "string",
+                        "description": "Network Security Group resource ID"
+                      }
+                    }
+                  },
+                  "routeTable": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "string",
+                        "description": "Route Table resource ID"
+                      }
+                    }
+                  },
+                  "natGateway": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "string",
+                        "description": "NAT Gateway resource ID"
+                      }
+                    }
+                  },
+                  "serviceEndpoints": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "service": {
+                          "type": "string",
+                          "enum": [
+                            "Microsoft.Storage", "Microsoft.Sql", "Microsoft.AzureCosmosDB",
+                            "Microsoft.KeyVault", "Microsoft.ServiceBus", "Microsoft.EventHub",
+                            "Microsoft.AzureActiveDirectory", "Microsoft.ContainerRegistry"
+                          ],
+                          "description": "Service endpoint type"
+                        },
+                        "locations": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          },
+                          "description": "Service endpoint locations"
+                        }
+                      },
+                      "required": ["service"]
+                    }
+                  },
+                  "serviceEndpointPolicies": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "description": "Service endpoint policy resource ID"
+                        }
+                      }
+                    }
+                  },
+                  "delegations": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "name": {
+                          "type": "string",
+                          "description": "Delegation name"
+                        },
+                        "properties": {
+                          "type": "object",
+                          "properties": {
+                            "serviceName": {
+                              "type": "string",
+                              "enum": [
+                                "Microsoft.Web/serverFarms",
+                                "Microsoft.ContainerInstance/containerGroups",
+                                "Microsoft.Netapp/volumes",
+                                "Microsoft.HardwareSecurityModules/dedicatedHSMs",
+                                "Microsoft.ServiceFabricMesh/networks",
+                                "Microsoft.Logic/integrationServiceEnvironments",
+                                "Microsoft.Batch/batchAccounts",
+                                "Microsoft.Sql/managedInstances"
+                              ],
+                              "description": "Service delegation name"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  },
+                  "privateEndpointNetworkPolicies": {
+                    "type": "string",
+                    "enum": ["Enabled", "Disabled"],
+                    "description": "Private endpoint network policies"
+                  },
+                  "privateLinkServiceNetworkPolicies": {
+                    "type": "string",
+                    "enum": ["Enabled", "Disabled"],
+                    "description": "Private link service network policies"
+                  }
+                },
+                "required": ["addressPrefix"]
+              }
+            },
+            "required": ["name", "properties"]
+          },
+          "description": "List of subnets in the virtual network"
+        },
+        "virtualNetworkPeerings": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "string",
+                "description": "Peering name"
+              },
+              "properties": {
+                "type": "object",
+                "properties": {
+                  "remoteVirtualNetwork": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "string",
+                        "description": "Remote virtual network resource ID"
+                      }
+                    }
+                  },
+                  "allowVirtualNetworkAccess": {
+                    "type": "boolean",
+                    "description": "Allow virtual network access"
+                  },
+                  "allowForwardedTraffic": {
+                    "type": "boolean",
+                    "description": "Allow forwarded traffic"
+                  },
+                  "allowGatewayTransit": {
+                    "type": "boolean",
+                    "description": "Allow gateway transit"
+                  },
+                  "useRemoteGateways": {
+                    "type": "boolean",
+                    "description": "Use remote gateways"
+                  }
+                }
+              }
+            }
+          },
+          "description": "Virtual network peerings"
+        },
+        "enableDdosProtection": {
+          "type": "boolean",
+          "description": "Enable DDoS protection"
+        },
+        "enableVmProtection": {
+          "type": "boolean",
+          "description": "Enable VM protection"
+        },
+        "ddosProtectionPlan": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string",
+              "description": "DDoS protection plan resource ID"
+            }
+          }
+        }
+      },
+      "required": ["addressSpace"]
+    },
+    "tags": {
+      "type": "object",
+      "description": "Resource tags",
+      "additionalProperties": {
+        "type": "string"
+      }
+    }
+  },
+  "required": ["apiVersion", "type", "name", "location", "properties"],
+  "additionalProperties": false
+}

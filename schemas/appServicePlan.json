@@ -1,0 +1,147 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "title": "App Service Plan Schema",
+  "description": "Schema for Azure App Service Plan resource in Bicep",
+  "properties": {
+    "apiVersion": {
+      "type": "string",
+      "enum": ["2020-12-01", "2021-01-15", "2021-02-01", "2022-03-01"],
+      "description": "The API version for the app service plan resource"
+    },
+    "type": {
+      "type": "string",
+      "const": "Microsoft.Web/serverfarms",
+      "description": "The resource type for Azure App Service Plan"
+    },
+    "name": {
+      "type": "string",
+      "pattern": "^[a-zA-Z0-9][a-zA-Z0-9-]{1,58}[a-zA-Z0-9]$",
+      "description": "App Service Plan name (2-60 characters, alphanumeric and hyphens)"
+    },
+    "location": {
+      "type": "string",
+      "description": "Azure region where the app service plan will be created"
+    },
+    "sku": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "enum": [
+            "F1", "D1", "B1", "B2", "B3",
+            "S1", "S2", "S3",
+            "P1", "P2", "P3",
+            "P1V2", "P2V2", "P3V2",
+            "P1V3", "P2V3", "P3V3",
+            "EP1", "EP2", "EP3",
+            "Y1"
+          ],
+          "description": "App Service Plan SKU name"
+        },
+        "tier": {
+          "type": "string",
+          "enum": [
+            "Free", "Shared", "Basic", "Standard", "Premium", 
+            "PremiumV2", "PremiumV3", "ElasticPremium", "Dynamic"
+          ],
+          "description": "App Service Plan pricing tier"
+        },
+        "size": {
+          "type": "string",
+          "enum": [
+            "F1", "D1", "B1", "B2", "B3",
+            "S1", "S2", "S3",
+            "P1", "P2", "P3",
+            "P1V2", "P2V2", "P3V2",
+            "P1V3", "P2V3", "P3V3",
+            "EP1", "EP2", "EP3",
+            "Y1"
+          ],
+          "description": "App Service Plan instance size"
+        },
+        "capacity": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 30,
+          "description": "Number of instances"
+        }
+      },
+      "required": ["name", "tier"]
+    },
+    "kind": {
+      "type": "string",
+      "enum": ["Windows", "Linux", "FunctionApp", "elastic"],
+      "description": "App Service Plan kind"
+    },
+    "properties": {
+      "type": "object",
+      "properties": {
+        "perSiteScaling": {
+          "type": "boolean",
+          "description": "Enable per-site scaling"
+        },
+        "elasticScaleEnabled": {
+          "type": "boolean",
+          "description": "Enable elastic scale"
+        },
+        "maximumElasticWorkerCount": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 100,
+          "description": "Maximum number of elastic workers"
+        },
+        "isSpot": {
+          "type": "boolean",
+          "description": "Enable spot instances"
+        },
+        "spotExpirationTime": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Spot instance expiration time"
+        },
+        "freeOfferExpirationTime": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Free offer expiration time"
+        },
+        "reserved": {
+          "type": "boolean",
+          "description": "Enable reserved instances"
+        },
+        "isXenon": {
+          "type": "boolean",
+          "description": "Enable Xenon workers (Windows Containers)"
+        },
+        "hyperV": {
+          "type": "boolean",
+          "description": "Enable Hyper-V containers"
+        },
+        "targetWorkerCount": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Target worker count"
+        },
+        "targetWorkerSizeId": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 2,
+          "description": "Target worker size ID (0=Small, 1=Medium, 2=Large)"
+        },
+        "workerTierName": {
+          "type": "string",
+          "description": "Worker tier name"
+        }
+      }
+    },
+    "tags": {
+      "type": "object",
+      "description": "Resource tags",
+      "additionalProperties": {
+        "type": "string"
+      }
+    }
+  },
+  "required": ["apiVersion", "type", "name", "location", "sku"],
+  "additionalProperties": false
+}
