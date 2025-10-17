@@ -1,10 +1,8 @@
 // Main application script
 console.log('🚀 Script.js file loaded successfully!');
-alert('Script.js file loaded - DOM listener added');
 
 document.addEventListener('DOMContentLoaded', function() {
     console.log('🔧 Bicep Schema Builder loaded - DOM is ready');
-    alert('DOM is ready - about to call init()');
     
     // Initialize the application
     init();
@@ -17,21 +15,31 @@ let azureResourceGraph;
 
 function init() {
     console.log('🚀 Init function called');
-    alert('Init function called - check console for more details');
     
-    // Initialize schema parser
-    schemaParser = new SchemaParser();
-    
-    // Initialize Azure Resource Graph client
-    if (typeof AzureResourceGraphClient !== 'undefined') {
-        azureResourceGraph = new AzureResourceGraphClient();
+    try {
+        // Initialize schema parser
+        if (typeof SchemaParser !== 'undefined') {
+            schemaParser = new SchemaParser();
+        }
+        
+        // Initialize Azure Resource Graph client
+        if (typeof AzureResourceGraphClient !== 'undefined') {
+            azureResourceGraph = new AzureResourceGraphClient();
+        }
+        
+        // Set up event listeners
+        setupEventListeners();
+        
+        // Initialize tabs
+        initializeTabs();
+        
+        // Initialize theme
+        initializeTheme();
+        
+        console.log('✅ Application initialized successfully');
+    } catch (error) {
+        console.error('❌ Error during initialization:', error);
     }
-    
-    // Set up event listeners
-    setupEventListeners();
-    
-    console.log('✅ Application initialized');
-    alert('Application initialization complete');
 }
 
 // Enhanced Tab Management
@@ -66,6 +74,33 @@ function switchTab(tabName) {
     if (typeof window.trackEvent === 'function') {
         window.trackEvent('tab_switch', 'Navigation', tabName);
     }
+}
+
+// Initialize tab functionality
+function initializeTabs() {
+    console.log('🔧 Initializing tabs...');
+    
+    // Set up tab click listeners
+    const navTabs = document.querySelectorAll('.nav-tab');
+    navTabs.forEach(tab => {
+        tab.addEventListener('click', function() {
+            const tabName = this.getAttribute('data-tab');
+            if (tabName) {
+                switchTab(tabName);
+            }
+        });
+    });
+    
+    // Ensure first tab is active by default
+    const firstTab = document.querySelector('.nav-tab');
+    if (firstTab) {
+        const firstTabName = firstTab.getAttribute('data-tab');
+        if (firstTabName) {
+            switchTab(firstTabName);
+        }
+    }
+    
+    console.log('✅ Tabs initialized');
 }
 
 // Enhanced Theme Management
@@ -133,139 +168,78 @@ async function copyToClipboard(text, successMessage = '✅ Copied to clipboard!'
 }
 
 function setupEventListeners() {
-    // File upload
-    const fileInput = document.getElementById('schemaFile');
-    fileInput.addEventListener('change', handleFileUpload);
+    console.log('🔧 Setting up event listeners...');
     
-    // Editor buttons
-    document.getElementById('validateBtn').addEventListener('click', validateSchema);
-    document.getElementById('formatBtn').addEventListener('click', formatJSON);
-    document.getElementById('downloadBtn').addEventListener('click', downloadSchema);
-    const clearEditorBtn = document.getElementById('clearEditorBtn');
-    if (clearEditorBtn) clearEditorBtn.addEventListener('click', clearEditor);
-    
-    // Template buttons
-    const templateButtons = document.querySelectorAll('.template-btn');
-    templateButtons.forEach(btn => {
-        btn.addEventListener('click', (e) => {
-            const template = e.target.dataset.template;
-            loadTemplate(template);
-            // Track template usage
-            if (typeof window.trackEvent === 'function') {
-                window.trackEvent('template_load', 'Templates', template);
-            }
+    try {
+        // File upload
+        const fileInput = document.getElementById('schemaFile');
+        if (fileInput) {
+            fileInput.addEventListener('change', handleFileUpload);
+        }
+        
+        // Editor buttons - Main Schema Builder tab
+        const validateBtn = document.getElementById('validateBtn');
+        const formatBtn = document.getElementById('formatBtn');
+        const downloadBtn = document.getElementById('downloadBtn');
+        const clearEditorBtn = document.getElementById('clearEditorBtn');
+        
+        if (validateBtn) validateBtn.addEventListener('click', validateSchema);
+        if (formatBtn) formatBtn.addEventListener('click', formatJSON);
+        if (downloadBtn) downloadBtn.addEventListener('click', downloadSchema);
+        if (clearEditorBtn) clearEditorBtn.addEventListener('click', clearEditor);
+        
+        // ARM Converter buttons
+        const analyzeArmBtn = document.getElementById('analyzeArmBtn');
+        const convertToBicepBtn = document.getElementById('convertToBicepBtn');
+        const copyBicepBtn = document.getElementById('copyBicepBtn');
+        const downloadBicepBtn = document.getElementById('downloadBicepBtn');
+        
+        if (analyzeArmBtn) analyzeArmBtn.addEventListener('click', analyzeArmTemplate);
+        if (convertToBicepBtn) convertToBicepBtn.addEventListener('click', convertArmToBicep);
+        if (copyBicepBtn) copyBicepBtn.addEventListener('click', copyBicepToClipboard);
+        if (downloadBicepBtn) downloadBicepBtn.addEventListener('click', downloadBicepTemplate);
+        
+        // Schema Validator buttons
+        const runTestSuiteBtn = document.getElementById('runTestSuiteBtn');
+        const loadSampleBtn = document.getElementById('loadSampleBtn');
+        
+        if (runTestSuiteBtn) runTestSuiteBtn.addEventListener('click', runTestSuite);
+        if (loadSampleBtn) loadSampleBtn.addEventListener('click', loadSampleCode);
+        
+        // Mode buttons for Schema Validator
+        const resourceModeBtn = document.getElementById('resourceModeBtn');
+        const templateModeBtn = document.getElementById('templateModeBtn');
+        const bicepModeBtn = document.getElementById('bicepModeBtn');
+        
+        if (resourceModeBtn) resourceModeBtn.addEventListener('click', () => setValidationMode('resource'));
+        if (templateModeBtn) templateModeBtn.addEventListener('click', () => setValidationMode('template'));
+        if (bicepModeBtn) bicepModeBtn.addEventListener('click', () => setValidationMode('bicep'));
+        
+        // Template buttons
+        const templateButtons = document.querySelectorAll('.template-btn');
+        templateButtons.forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const template = e.target.dataset.template;
+                if (template) {
+                    loadTemplate(template);
+                    // Track template usage
+                    if (typeof window.trackEvent === 'function') {
+                        window.trackEvent('template_load', 'Templates', template);
+                    }
+                }
+            });
         });
-    });
-    
-    // Theme toggle
-    const themeToggle = document.getElementById('themeToggle');
-    if (themeToggle) {
-        themeToggle.addEventListener('click', toggleTheme);
+        
+        // Theme toggle
+        const themeToggle = document.querySelector('.theme-toggle');
+        if (themeToggle) {
+            themeToggle.addEventListener('click', toggleTheme);
+        }
+        
+        console.log('✅ Event listeners set up successfully');
+    } catch (error) {
+        console.error('❌ Error setting up event listeners:', error);
     }
-    
-    // Export buttons
-    const exportYaml = document.getElementById('exportYaml');
-    const exportBicep = document.getElementById('exportBicep');
-    if (exportYaml) exportYaml.addEventListener('click', exportAsYAML);
-    if (exportBicep) exportBicep.addEventListener('click', exportAsBicep);
-    
-    // Azure integration buttons
-    const azureAuth = document.getElementById('azureAuth');
-    const azureResourceTypes = document.getElementById('azureResourceTypes');
-    const azureValidate = document.getElementById('azureValidate');
-    if (azureAuth) azureAuth.addEventListener('click', handleAzureAuth);
-    if (azureResourceTypes) azureResourceTypes.addEventListener('click', browseAzureResourceTypes);
-    if (azureValidate) azureValidate.addEventListener('click', validateWithAzure);
-    
-    // Deployment builder buttons
-    const validateAllResources = document.getElementById('validateAllResources');
-    const configureResources = document.getElementById('configureResources');
-    const previewDeployment = document.getElementById('previewDeployment');
-    const exportSelectedBicep = document.getElementById('exportSelectedBicep');
-    const downloadDeploymentPackage = document.getElementById('downloadDeploymentPackage');
-    if (validateAllResources) validateAllResources.addEventListener('click', validateAllSelectedResources);
-    if (configureResources) configureResources.addEventListener('click', openResourceConfigModal);
-    if (previewDeployment) previewDeployment.addEventListener('click', previewSelectedDeployment);
-    if (exportSelectedBicep) exportSelectedBicep.addEventListener('click', exportSelectedResourcesBicep);
-    if (downloadDeploymentPackage) downloadDeploymentPackage.addEventListener('click', downloadDeploymentPackageZip);
-    
-    // Modal controls
-    const closeConfigModal = document.getElementById('closeConfigModal');
-    const saveConfig = document.getElementById('saveConfig');
-    const resetConfig = document.getElementById('resetConfig');
-    if (closeConfigModal) closeConfigModal.addEventListener('click', closeResourceConfigModal);
-    if (saveConfig) saveConfig.addEventListener('click', saveResourceConfiguration);
-    if (resetConfig) resetConfig.addEventListener('click', resetResourceConfiguration);
-    
-    // Resource selection checkboxes
-    const resourceCheckboxes = document.querySelectorAll('.resource-checkbox input[type="checkbox"]');
-    resourceCheckboxes.forEach(checkbox => {
-        checkbox.addEventListener('change', updateSelectedResources);
-    });
-    
-    // ARM Converter event listeners
-    const analyzeArmBtn = document.getElementById('analyzeArmBtn');
-    const convertToBicepBtn = document.getElementById('convertToBicepBtn');
-    const copyBicepBtn = document.getElementById('copyBicepBtn');
-    const downloadBicepBtn = document.getElementById('downloadBicepBtn');
-    const deployBicepBtn = document.getElementById('deployBicepBtn');
-    
-    if (analyzeArmBtn) {
-        console.log('✅ Analyze ARM button found, adding event listener');
-        analyzeArmBtn.addEventListener('click', function() {
-            alert('Analyze button clicked!');
-            analyzeArmTemplate();
-        });
-    } else {
-        console.log('❌ Analyze ARM button not found');
-        alert('❌ Analyze ARM button not found in DOM!');
-    }
-    
-    if (convertToBicepBtn) {
-        console.log('✅ Convert to Bicep button found, adding event listener');
-        convertToBicepBtn.addEventListener('click', function() {
-            alert('Convert button clicked!');
-            convertArmToBicep();
-        });
-    } else {
-        console.log('❌ Convert to Bicep button not found');
-        alert('❌ Convert to Bicep button not found in DOM!');
-    }
-    
-    if (copyBicepBtn) copyBicepBtn.addEventListener('click', copyBicepToClipboard);
-    if (downloadBicepBtn) downloadBicepBtn.addEventListener('click', downloadBicepFile);
-    if (deployBicepBtn) deployBicepBtn.addEventListener('click', deployBicepTemplate);
-    
-    // Network mode toggle
-    const networkModeRadios = document.querySelectorAll('input[name="networkMode"]');
-    networkModeRadios.forEach(radio => {
-        radio.addEventListener('change', toggleNetworkMode);
-    });
-    
-    // Tab navigation
-    const navTabs = document.querySelectorAll('.nav-tab');
-    navTabs.forEach(tab => {
-        tab.addEventListener('click', (e) => {
-            const targetTab = e.target.closest('.nav-tab').dataset.tab;
-            switchTab(targetTab);
-        });
-    });
-    
-    // Initialize first tab as active
-    switchTab('schema-builder');
-    
-    // Editor real-time validation
-    const editor = document.getElementById('schemaEditor');
-    editor.addEventListener('input', debounce(validateSchemaRealTime, 1000));
-
-    // Validation mode toggle buttons
-    const resourceModeBtn = document.getElementById('resourceModeBtn');
-    const templateModeBtn = document.getElementById('templateModeBtn');
-    if (resourceModeBtn) resourceModeBtn.addEventListener('click', () => setValidationMode('resource'));
-    if (templateModeBtn) templateModeBtn.addEventListener('click', () => setValidationMode('template'));
-
-    // Initialize theme
-    initializeTheme();
 }
 
 async function handleFileUpload(event) {
@@ -577,6 +551,31 @@ function downloadSchema() {
         showSuccess('✅ Schema downloaded successfully!');
     } catch (error) {
         showError(`❌ Cannot download invalid JSON: ${error.message}`);
+    }
+}
+
+function downloadBicepTemplate() {
+    const bicepOutput = document.getElementById('bicepOutput');
+    if (!bicepOutput || !bicepOutput.value.trim()) {
+        showError('❌ No Bicep template to download. Please convert an ARM template first.');
+        return;
+    }
+
+    try {
+        const content = bicepOutput.value;
+        const blob = new Blob([content], { type: 'text/plain' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'template.bicep';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        
+        showSuccess('✅ Bicep template downloaded successfully!');
+    } catch (error) {
+        showError(`❌ Error downloading Bicep template: ${error.message}`);
     }
 }
 
