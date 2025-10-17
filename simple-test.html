@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simple ARM Template Validator</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        textarea {
+            width: 100%;
+            height: 300px;
+            margin: 10px 0;
+            padding: 15px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+            margin-right: 10px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        .clear-btn {
+            background: #6c757d;
+        }
+        .clear-btn:hover {
+            background: #545b62;
+        }
+        .results {
+            margin-top: 20px;
+            padding: 20px;
+            border-radius: 5px;
+            min-height: 100px;
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+        }
+        .success {
+            background: #d4edda;
+            color: #155724;
+            border-color: #c3e6cb;
+        }
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            border-color: #f5c6cb;
+        }
+        .info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border-color: #bee5eb;
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+        }
+        h3 {
+            margin-bottom: 10px;
+        }
+        .sample-link {
+            color: #007bff;
+            cursor: pointer;
+            text-decoration: underline;
+        }
+        .sample-link:hover {
+            color: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 Simple ARM Template Validator</h1>
+        <p>Paste your ARM template JSON below and click "Validate" to check its structure.</p>
+        
+        <div>
+            <span class="sample-link" onclick="loadSample()">📁 Load Sample ARM Template</span> | 
+            <span class="sample-link" onclick="clearEditor()">🗑️ Clear Editor</span>
+        </div>
+        
+        <h3>ARM Template JSON:</h3>
+        <textarea id="jsonInput" placeholder="Paste your ARM template JSON here...
+
+Example:
+{
+  &quot;$schema&quot;: &quot;https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#&quot;,
+  &quot;contentVersion&quot;: &quot;1.0.0.0&quot;,
+  &quot;parameters&quot;: {},
+  &quot;variables&quot;: {},
+  &quot;resources&quot;: []
+}"></textarea>
+        
+        <div>
+            <button onclick="validateTemplate()">✅ Validate ARM Template</button>
+            <button onclick="formatJson()" class="clear-btn">🎨 Format JSON</button>
+            <button onclick="clearAll()" class="clear-btn">🗑️ Clear All</button>
+        </div>
+        
+        <h3>Validation Results:</h3>
+        <div id="results" class="results">
+            <p>Ready to validate. Paste your ARM template above and click "Validate".</p>
+        </div>
+    </div>
+
+    <script>
+        function validateTemplate() {
+            console.log('🔍 Validate function called');
+            
+            const input = document.getElementById('jsonInput');
+            const results = document.getElementById('results');
+            const content = input.value.trim();
+            
+            console.log('📝 Content length:', content.length);
+            
+            if (!content) {
+                results.className = 'results error';
+                results.innerHTML = '❌ <strong>No Content:</strong> Please paste your ARM template JSON first.';
+                return;
+            }
+            
+            try {
+                // Parse JSON
+                const template = JSON.parse(content);
+                console.log('✅ JSON parsed successfully');
+                console.log('📊 Template keys:', Object.keys(template));
+                
+                // Check ARM template structure
+                const hasSchema = template.$schema;
+                const hasContentVersion = template.contentVersion;
+                const hasResources = template.resources;
+                const hasParameters = template.parameters;
+                const hasVariables = template.variables;
+                
+                if (hasSchema && hasResources) {
+                    results.className = 'results success';
+                    
+                    let html = '<h4>✅ Valid ARM Template Structure!</h4>';
+                    html += '<div style="font-family: monospace; font-size: 14px; margin-top: 15px;">';
+                    html += '<strong>📊 Template Analysis:</strong><br>';
+                    html += `• Schema: ${template.$schema}<br>`;
+                    html += `• Content Version: ${hasContentVersion ? template.contentVersion : 'Not specified'}<br>`;
+                    html += `• Parameters: ${hasParameters ? Object.keys(template.parameters).length : 0}<br>`;
+                    html += `• Variables: ${hasVariables ? Object.keys(template.variables).length : 0}<br>`;
+                    html += `• Resources: ${hasResources ? template.resources.length : 0}<br><br>`;
+                    
+                    if (hasResources && template.resources.length > 0) {
+                        html += '<strong>🔍 Resources:</strong><br>';
+                        template.resources.forEach((resource, index) => {
+                            html += `${index + 1}. ${resource.type || 'Unknown type'} (API: ${resource.apiVersion || 'N/A'})<br>`;
+                        });
+                        html += '<br>';
+                    }
+                    
+                    if (hasParameters && Object.keys(template.parameters).length > 0) {
+                        html += '<strong>⚙️ Parameters:</strong><br>';
+                        Object.keys(template.parameters).forEach(param => {
+                            const paramObj = template.parameters[param];
+                            html += `• ${param} (${paramObj.type || 'unknown type'})<br>`;
+                        });
+                        html += '<br>';
+                    }
+                    
+                    html += '<strong>✅ Status:</strong> Valid ARM template structure detected!<br>';
+                    html += '<strong>ℹ️ Note:</strong> This is basic structure validation. Deploy with Azure CLI for full validation.';
+                    html += '</div>';
+                    
+                    results.innerHTML = html;
+                } else if (hasSchema) {
+                    results.className = 'results info';
+                    results.innerHTML = `
+                        <h4>ℹ️ Partial ARM Template</h4>
+                        <p>This appears to be an ARM template but is missing some standard components:</p>
+                        <ul>
+                            <li>Schema: ${hasSchema ? '✅' : '❌'}</li>
+                            <li>Resources: ${hasResources ? '✅' : '❌'}</li>
+                            <li>Content Version: ${hasContentVersion ? '✅' : '❌'}</li>
+                        </ul>
+                    `;
+                } else {
+                    results.className = 'results info';
+                    results.innerHTML = `
+                        <h4>ℹ️ Valid JSON but not ARM Template</h4>
+                        <p>Your JSON is valid but doesn't appear to be an ARM template.</p>
+                        <p>ARM templates typically have:</p>
+                        <ul>
+                            <li>$schema property</li>
+                            <li>resources array</li>
+                            <li>contentVersion</li>
+                        </ul>
+                        <p><strong>Object keys found:</strong> ${Object.keys(template).join(', ')}</p>
+                    `;
+                }
+                
+            } catch (error) {
+                console.error('❌ JSON parsing failed:', error);
+                results.className = 'results error';
+                results.innerHTML = `
+                    <h4>❌ Invalid JSON</h4>
+                    <p><strong>Error:</strong> ${error.message}</p>
+                    <p><strong>Common issues:</strong></p>
+                    <ul>
+                        <li>Missing or extra commas</li>
+                        <li>Unmatched brackets or braces</li>
+                        <li>Missing quotes around strings</li>
+                        <li>Invalid escape characters</li>
+                    </ul>
+                `;
+            }
+        }
+        
+        function formatJson() {
+            const input = document.getElementById('jsonInput');
+            const content = input.value.trim();
+            
+            if (!content) {
+                alert('Please paste some JSON content first.');
+                return;
+            }
+            
+            try {
+                const parsed = JSON.parse(content);
+                input.value = JSON.stringify(parsed, null, 2);
+                
+                const results = document.getElementById('results');
+                results.className = 'results success';
+                results.innerHTML = '✅ <strong>JSON Formatted!</strong> Your JSON has been properly formatted with indentation.';
+            } catch (error) {
+                alert('Cannot format invalid JSON. Please fix syntax errors first.');
+            }
+        }
+        
+        function clearAll() {
+            document.getElementById('jsonInput').value = '';
+            document.getElementById('results').className = 'results';
+            document.getElementById('results').innerHTML = '<p>Content cleared. Ready for new input.</p>';
+        }
+        
+        function clearEditor() {
+            document.getElementById('jsonInput').value = '';
+        }
+        
+        function loadSample() {
+            const sample = {
+                "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+                "contentVersion": "1.0.0.0",
+                "parameters": {
+                    "storageAccountName": {
+                        "type": "string",
+                        "defaultValue": "mystorageaccount123",
+                        "metadata": {
+                            "description": "Name of the storage account"
+                        }
+                    }
+                },
+                "variables": {
+                    "location": "[resourceGroup().location]"
+                },
+                "resources": [
+                    {
+                        "type": "Microsoft.Storage/storageAccounts",
+                        "apiVersion": "2021-04-01",
+                        "name": "[parameters('storageAccountName')]",
+                        "location": "[variables('location')]",
+                        "sku": {
+                            "name": "Standard_LRS"
+                        },
+                        "kind": "StorageV2",
+                        "properties": {
+                            "supportsHttpsTrafficOnly": true
+                        }
+                    }
+                ]
+            };
+            
+            document.getElementById('jsonInput').value = JSON.stringify(sample, null, 2);
+            
+            const results = document.getElementById('results');
+            results.className = 'results info';
+            results.innerHTML = '📁 <strong>Sample loaded!</strong> Click "Validate" to test the sample ARM template.';
+        }
+    </script>
+</body>
+</html>

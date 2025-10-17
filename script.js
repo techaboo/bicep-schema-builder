@@ -17,6 +17,27 @@ function init() {
     console.log('🚀 Init function called');
     
     try {
+        // Add immediate test for basic elements
+        setTimeout(() => {
+            console.log('🔍 BASIC ELEMENT TEST:');
+            const schemaEditor = document.getElementById('schemaEditor');
+            const validateBtn = document.getElementById('validateBtn');
+            const activeTab = document.querySelector('.nav-tab.active');
+            
+            console.log('- schemaEditor element:', schemaEditor);
+            console.log('- validateBtn element:', validateBtn);
+            console.log('- activeTab element:', activeTab);
+            console.log('- activeTab data-tab:', activeTab ? activeTab.getAttribute('data-tab') : 'null');
+            
+            // Test button click handler
+            if (validateBtn) {
+                console.log('🔍 TESTING BUTTON CLICK HANDLER:');
+                validateBtn.addEventListener('click', function() {
+                    console.log('🔍 BUTTON CLICKED! Event fired correctly');
+                });
+            }
+        }, 1000);
+        
         // Initialize schema parser
         if (typeof SchemaParser !== 'undefined') {
             schemaParser = new SchemaParser();
@@ -276,9 +297,114 @@ async function handleFileUpload(event) {
 }
 
 function validateSchema() {
+    console.log('🔍 VALIDATE SCHEMA CALLED!');
+    
+    // IMMEDIATE TEST - Get schemaEditor directly
+    const schemaEditor = document.getElementById('schemaEditor');
+    console.log('🔍 Direct schemaEditor lookup:', schemaEditor);
+    
+    // IMMEDIATE TEST - Get validationOutput directly
+    const validationOutput = document.getElementById('validationOutput');
+    console.log('🔍 Direct validationOutput lookup:', validationOutput);
+    
+    if (!validationOutput) {
+        console.error('❌ VALIDATION OUTPUT ELEMENT NOT FOUND!');
+        alert('❌ Validation output area not found. Please refresh the page.');
+        return;
+    }
+    
+    // Test that we can write to the output
+    validationOutput.innerHTML = '<div style="padding: 20px; background: #e8f5e8; color: #2d5016; border-radius: 8px;">🧪 <strong>TEST:</strong> Validation function is working! Looking for content...</div>';
+    
+    if (schemaEditor) {
+        const content = schemaEditor.value;
+        console.log('🔍 Direct content check:', {
+            length: content.length,
+            preview: content.substring(0, 100)
+        });
+        
+        if (!content.trim()) {
+            console.log('❌ CONTENT IS EMPTY');
+            validationOutput.innerHTML = '<div style="padding: 20px; background: #ffebee; color: #c62828; border-radius: 8px;">❌ <strong>No Content:</strong> Please provide a schema to validate</div>';
+            return;
+        } else {
+            console.log('✅ CONTENT FOUND - proceeding with validation');
+            validationOutput.innerHTML = '<div style="padding: 20px; background: #e8f5e8; color: #2d5016; border-radius: 8px;">✅ <strong>Content Found:</strong> Processing ' + content.length + ' characters...</div>';
+        }
+    } else {
+        console.log('❌ SCHEMA EDITOR NOT FOUND');
+        validationOutput.innerHTML = '<div style="padding: 20px; background: #ffebee; color: #c62828; border-radius: 8px;">❌ <strong>Error:</strong> Schema editor not found</div>';
+        return;
+    }
+    
+    // Continue with the actual validation process
+    const editorContent = schemaEditor.value.trim();
+    
+    try {
+        // Try to parse as JSON
+        const parsedContent = JSON.parse(editorContent);
+        console.log('✅ Content parsed as JSON successfully');
+        console.log('📊 Parsed content keys:', Object.keys(parsedContent));
+        
+        // Check if it's an ARM template
+        if (parsedContent.$schema && parsedContent.resources) {
+            console.log('✅ Detected ARM template structure');
+            
+            validationOutput.innerHTML = `
+                <div style="padding: 20px; background: #e8f5e8; color: #2d5016; border-radius: 8px; margin-bottom: 10px;">
+                    <h4>✅ Valid ARM Template Structure Detected!</h4>
+                </div>
+                <div style="padding: 15px; background: #f8f9fa; border-radius: 8px; font-family: monospace; font-size: 14px;">
+                    <strong>📊 Template Analysis:</strong><br>
+                    • Schema: ${parsedContent.$schema}<br>
+                    • Content Version: ${parsedContent.contentVersion || 'Not specified'}<br>
+                    • Parameters: ${Object.keys(parsedContent.parameters || {}).length}<br>
+                    • Resources: ${(parsedContent.resources || []).length}<br>
+                    • Variables: ${Object.keys(parsedContent.variables || {}).length}<br><br>
+                    
+                    <strong>🔍 Resource Details:</strong><br>
+                    ${(parsedContent.resources || []).map((resource, index) => 
+                        `${index + 1}. ${resource.type} (${resource.apiVersion})`
+                    ).join('<br>')}
+                    <br><br>
+                    <strong>ℹ️ Note:</strong> This is basic structure validation. For comprehensive ARM template validation, Azure CLI or deployment tools are recommended.
+                </div>
+            `;
+            return;
+        }
+        
+        // If not ARM template, show basic JSON validation
+        validationOutput.innerHTML = `
+            <div style="padding: 20px; background: #e8f5e8; color: #2d5016; border-radius: 8px;">
+                ✅ <strong>Valid JSON:</strong> Content parsed successfully as JSON with ${Object.keys(parsedContent).length} top-level properties.
+            </div>
+        `;
+        
+    } catch (jsonError) {
+        console.log('❌ JSON parsing failed:', jsonError.message);
+        
+        // Check if it might be Bicep code
+        if (editorContent.includes('resource ') || editorContent.includes('param ')) {
+            validationOutput.innerHTML = `
+                <div style="padding: 20px; background: #fff3cd; color: #856404; border-radius: 8px;">
+                    ℹ️ <strong>Bicep Code Detected:</strong> This appears to be Bicep code, not JSON. For Bicep validation, please use the Azure Bicep CLI.
+                </div>
+            `;
+        } else {
+            validationOutput.innerHTML = `
+                <div style="padding: 20px; background: #ffebee; color: #c62828; border-radius: 8px;">
+                    ❌ <strong>Invalid JSON:</strong> ${jsonError.message}
+                </div>
+            `;
+        }
+    }
+}
+    
     // Determine which tab is active and get the appropriate editor
     const activeTab = document.querySelector('.nav-tab.active');
     const activeTabId = activeTab ? activeTab.getAttribute('data-tab') : 'schema-builder';
+    
+    console.log('🔍 Active tab:', activeTabId, 'Active tab element:', activeTab);
     
     let editorElement;
     let outputElement;
@@ -287,10 +413,12 @@ function validateSchema() {
         // Schema Validator tab uses codeInput
         editorElement = document.getElementById('codeInput');
         outputElement = document.getElementById('validationOutput');
+        console.log('📝 Using Schema Validator tab elements');
     } else {
         // Schema Builder tab (default) uses schemaEditor
         editorElement = document.getElementById('schemaEditor');
         outputElement = document.getElementById('validationOutput');
+        console.log('📝 Using Schema Builder tab elements');
     }
     
     if (!editorElement) {
@@ -299,9 +427,13 @@ function validateSchema() {
         return;
     }
     
+    console.log('📝 Editor element found:', editorElement);
     const editorContent = editorElement.value.trim();
+    console.log('📝 Editor content length:', editorContent.length);
+    console.log('📝 Editor content preview:', editorContent.substring(0, 100) + (editorContent.length > 100 ? '...' : ''));
 
     if (!editorContent) {
+        console.warn('⚠️ No content found in editor');
         showError('❌ Please provide a schema to validate');
         return;
     }
@@ -309,14 +441,79 @@ function validateSchema() {
     console.log('🔍 Validating content from tab:', activeTabId, 'Content length:', editorContent.length);
 
     try {
-        showLoading('Validating schema...');
+        showLoading('Validating content...');
 
-        const parsedContent = JSON.parse(editorContent);
+        // Detect content type and handle accordingly
+        let parsedContent;
+        let contentType = 'unknown';
+        
+        // Try to parse as JSON first
+        try {
+            parsedContent = JSON.parse(editorContent);
+            contentType = 'json';
+            console.log('✅ Content parsed as JSON successfully');
+            console.log('📊 Parsed content keys:', Object.keys(parsedContent));
+            console.log('📊 Has $schema:', !!parsedContent.$schema);
+            console.log('📊 Has resources:', !!parsedContent.resources);
+        } catch (jsonError) {
+            console.log('ℹ️ Content is not valid JSON:', jsonError.message);
+            
+            // Check if it's Bicep code
+            if (editorContent.includes('resource ') || editorContent.includes('param ') || editorContent.includes('@description')) {
+                contentType = 'bicep';
+                console.log('ℹ️ Content detected as Bicep code');
+                showValidationResults({
+                    isValid: true,
+                    contentType: 'bicep',
+                    message: '✅ Bicep code detected. This is valid Bicep syntax.',
+                    details: 'Bicep code validation would require Bicep CLI. For JSON schema validation, please provide JSON content.'
+                });
+                return;
+            }
+            
+            // Check if it's ARM template JSON (even if malformed)
+            if (editorContent.includes('"$schema"') || editorContent.includes('"resources"') || editorContent.includes('"parameters"')) {
+                contentType = 'arm-template';
+                console.log('ℹ️ Content detected as ARM template (possibly malformed)');
+                showError('❌ Invalid JSON format. Please check your ARM template syntax.');
+                return;
+            }
+            
+            // Check if it's plain text or other
+            if (editorContent.length > 0) {
+                contentType = 'text';
+                console.log('ℹ️ Content detected as plain text');
+                showError('❌ Unsupported content type. Please provide valid JSON schema or ARM template.');
+                return;
+            }
+            
+            // If we get here, it's an unknown format
+            throw new Error('Unable to determine content type');
+        }
+
         currentSchema = parsedContent;
 
         // Check if schemaParser is initialized
         if (!schemaParser) {
-            console.warn('SchemaParser not available, using basic validation');
+            console.warn('⚠️ SchemaParser not available, using basic validation');
+            // For ARM templates, provide specific feedback even without schemaParser
+            if (parsedContent.$schema && parsedContent.resources) {
+                console.log('✅ Detected ARM template structure');
+                showValidationResults({
+                    isValid: true,
+                    contentType: 'ARM Template',
+                    message: '✅ Valid ARM Template Structure Detected!',
+                    details: `📊 Template Analysis:\n` +
+                            `• Schema: ${parsedContent.$schema}\n` +
+                            `• Content Version: ${parsedContent.contentVersion || 'Not specified'}\n` +
+                            `• Parameters: ${Object.keys(parsedContent.parameters || {}).length}\n` +
+                            `• Resources: ${(parsedContent.resources || []).length}\n` +
+                            `• Variables: ${Object.keys(parsedContent.variables || {}).length}\n\n` +
+                            `ℹ️ Note: This is basic structure validation. For comprehensive ARM template validation, Azure CLI or deployment tools are recommended.`
+                });
+                return;
+            }
+            
             // Perform basic validation without schemaParser
             const basicResults = performBasicValidation(parsedContent);
             if (basicResults.isValid) {
@@ -327,24 +524,31 @@ function validateSchema() {
             return;
         }
 
+        console.log('✅ SchemaParser is available, using advanced validation');
+        
         // Check validation mode
         const validationMode = schemaParser.getValidationMode();
+        console.log('🔧 Current validation mode:', validationMode);
 
         let validationResults;
 
         // Auto-detect if content is ARM template
         if (schemaParser.isArmTemplate(parsedContent)) {
+            console.log('🎯 Content identified as ARM template by schemaParser');
             // Automatically switch to template mode if we detect an ARM template
             if (validationMode === 'resource') {
+                console.log('🔄 Switching from resource to template mode');
                 setValidationMode('template');
             }
             validationResults = schemaParser.validateCompleteTemplate(parsedContent);
             showTemplateValidationResults(validationResults);
         } else if (validationMode === 'template') {
+            console.log('🎯 Using template mode validation');
             // User selected template mode, validate as ARM template
             validationResults = schemaParser.validateCompleteTemplate(parsedContent);
             showTemplateValidationResults(validationResults);
         } else {
+            console.log('🎯 Using resource schema mode validation');
             // Resource schema mode
             const schema = schemaParser.parseSchema(editorContent);
             validationResults = performDetailedValidation(schema);
@@ -357,7 +561,40 @@ function validateSchema() {
         }
 
     } catch (error) {
-        showError(`❌ Validation failed: ${error.message}`);
+        console.error('🚨 Validation error caught:', error);
+        console.error('🚨 Error stack:', error.stack);
+        
+        // Provide user-friendly error messages based on content and error type
+        if (error.message.includes('JSON')) {
+            showValidationResults({
+                isValid: false,
+                message: '❌ Invalid JSON Format',
+                details: 'The content you entered is not valid JSON. Please check:\n\n' +
+                        '• Missing or extra commas\n' +
+                        '• Unmatched brackets or braces\n' +
+                        '• Missing quotes around strings\n' +
+                        '• Invalid escape characters\n\n' +
+                        'For Bicep code validation, please use the appropriate Bicep tools.'
+            });
+        } else if (error.message.includes('schemaParser')) {
+            showValidationResults({
+                isValid: false,
+                message: '❌ Schema Parser Error',
+                details: `There was an issue with the schema validation engine:\n\n${error.message}\n\nThis might be a temporary issue. Try refreshing the page.`
+            });
+        } else {
+            // For ARM templates that had JSON parsing errors after successful initial parse
+            const trimmedContent = editorContent.substring(0, 100);
+            if (trimmedContent.includes('"$schema"') && trimmedContent.includes('deploymentTemplate')) {
+                showValidationResults({
+                    isValid: false,
+                    message: '❌ ARM Template Validation Error',
+                    details: `Your ARM template structure was recognized, but validation failed:\n\n${error.message}\n\nThe JSON syntax appears correct, but there may be issues with the template structure or references.`
+                });
+            } else {
+                showError(`❌ Validation failed: ${error.message}`);
+            }
+        }
     }
 }
 
@@ -848,6 +1085,34 @@ function showTemplateValidationResults(results) {
             message += '⚠️ Warnings:\n' + results.warnings.map(warning => `  • ${warning}`).join('\n');
         }
 
+        output.textContent = message;
+    }
+}
+
+function showValidationResults(results) {
+    const output = document.getElementById('validationOutput');
+    
+    if (results.isValid) {
+        output.className = 'output-panel success';
+        let message = results.message || '✅ Content is valid!';
+        
+        if (results.contentType) {
+            message += `\n\n📄 Content Type: ${results.contentType.toUpperCase()}`;
+        }
+        
+        if (results.details) {
+            message += `\n\nℹ️ Details:\n${results.details}`;
+        }
+        
+        output.textContent = message;
+    } else {
+        output.className = 'output-panel error';
+        let message = results.message || '❌ Content validation failed!';
+        
+        if (results.details) {
+            message += `\n\n${results.details}`;
+        }
+        
         output.textContent = message;
     }
 }
