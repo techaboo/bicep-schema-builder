@@ -276,12 +276,37 @@ async function handleFileUpload(event) {
 }
 
 function validateSchema() {
-    const editorContent = document.getElementById('schemaEditor').value.trim();
+    // Determine which tab is active and get the appropriate editor
+    const activeTab = document.querySelector('.nav-tab.active');
+    const activeTabId = activeTab ? activeTab.getAttribute('data-tab') : 'schema-builder';
+    
+    let editorElement;
+    let outputElement;
+    
+    if (activeTabId === 'schema-validator') {
+        // Schema Validator tab uses codeInput
+        editorElement = document.getElementById('codeInput');
+        outputElement = document.getElementById('validationOutput');
+    } else {
+        // Schema Builder tab (default) uses schemaEditor
+        editorElement = document.getElementById('schemaEditor');
+        outputElement = document.getElementById('validationOutput');
+    }
+    
+    if (!editorElement) {
+        console.error('❌ Editor element not found for tab:', activeTabId);
+        showError('❌ Editor not found. Please try refreshing the page.');
+        return;
+    }
+    
+    const editorContent = editorElement.value.trim();
 
     if (!editorContent) {
         showError('❌ Please provide a schema to validate');
         return;
     }
+
+    console.log('🔍 Validating content from tab:', activeTabId, 'Content length:', editorContent.length);
 
     try {
         showLoading('Validating schema...');
@@ -576,7 +601,26 @@ function formatValidatorCode() {
 }
 
 function clearEditor() {
-    const editor = document.getElementById('schemaEditor');
+    // Determine which tab is active and get the appropriate editor
+    const activeTab = document.querySelector('.nav-tab.active');
+    const activeTabId = activeTab ? activeTab.getAttribute('data-tab') : 'schema-builder';
+    
+    let editor;
+    
+    if (activeTabId === 'schema-validator') {
+        // Schema Validator tab uses codeInput
+        editor = document.getElementById('codeInput');
+    } else {
+        // Schema Builder tab (default) uses schemaEditor
+        editor = document.getElementById('schemaEditor');
+    }
+    
+    if (!editor) {
+        console.error('❌ Editor element not found for tab:', activeTabId);
+        showError('❌ Editor not found. Please try refreshing the page.');
+        return;
+    }
+    
     const content = editor.value.trim();
 
     if (!content) {
@@ -587,8 +631,11 @@ function clearEditor() {
     if (confirm('Are you sure you want to clear the editor?\n\nThis action cannot be undone.')) {
         editor.value = '';
         currentSchema = null;
-        document.getElementById('validationOutput').innerHTML = '<p class="placeholder">Upload or paste a schema to see validation results...</p>';
-        document.getElementById('validationOutput').className = 'output-panel';
+        const validationOutput = document.getElementById('validationOutput');
+        if (validationOutput) {
+            validationOutput.innerHTML = '<p class="placeholder">Upload or paste a schema to see validation results...</p>';
+            validationOutput.className = 'output-panel';
+        }
         editor.style.borderColor = '';
         showSuccess('✅ Editor cleared successfully!');
 
