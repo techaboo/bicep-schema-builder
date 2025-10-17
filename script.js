@@ -678,6 +678,7 @@ function convertSchemaToBicep(schema) {
     const resourceType = schema.properties?.type?.const || 'Microsoft.Resources/deployments';
     const resourceName = getResourceNameFromType(resourceType);
     const cleanResourceName = resourceName.replace(/[^a-zA-Z0-9]/g, '');
+    const targetScope = 'resourceGroup'; // Default scope
     
     let bicep = `// Generated Bicep template from JSON Schema
 // Resource Type: ${resourceType}
@@ -695,16 +696,16 @@ metadata version = '1.0.0'
 `;
 
     // Generate parameters based on schema
-    bicep += generateAdvancedParameters(schema, resourceType);
+    bicep += generateAdvancedParameters(schema, resourceType, targetScope);
 
     // Add variables section
-    bicep += generateVariables(schema, resourceType);
+    bicep += generateVariables(schema, resourceType, targetScope);
 
     // Add the resource definition with detailed properties
     bicep += generateDetailedResource(schema, resourceType, cleanResourceName);
 
     // Add outputs
-    bicep += generateAdvancedOutputs(schema, cleanResourceName);
+    bicep += generateAdvancedOutputs(schema, cleanResourceName, targetScope);
 
     return bicep;
 }
@@ -774,7 +775,26 @@ function getResourceNameFromType(resourceType) {
     return resourceTypeName.charAt(0).toLowerCase() + resourceTypeName.slice(1);
 }
 
-function generateAdvancedParameters(schema, resourceType) {
+// Helper function to determine if a resource type supports location and tags at resource group scope
+function resourceSupportsLocationAndTags(resourceType, targetScope = 'resourceGroup') {
+    // Microsoft.Resources/deployments at resourceGroup scope does NOT support location or tags
+    // It DOES support location at subscription, managementGroup, and tenant scopes
+    if (resourceType === 'Microsoft.Resources/deployments' && targetScope === 'resourceGroup') {
+        return false;
+    }
+    
+    // Add other resource types that don't support location/tags if needed
+    const resourcesWithoutLocation = [
+        'Microsoft.Authorization/policyAssignments',
+        'Microsoft.Authorization/roleAssignments'
+    ];
+    
+    return !resourcesWithoutLocation.includes(resourceType);
+}
+
+function generateAdvancedParameters(schema, resourceType, targetScope = 'resourceGroup') {
+    const supportsLocationAndTags = resourceSupportsLocationAndTags(resourceType, targetScope);
+    
     let params = `// === PARAMETERS ===
 
 @description('The name of the resource')
@@ -782,14 +802,25 @@ function generateAdvancedParameters(schema, resourceType) {
 @maxLength(80)
 param resourceName string
 
-@description('The location for the resource')
+`;
+
+    // Only add location parameter if the resource supports it
+    if (supportsLocationAndTags) {
+        params += `@description('The location for the resource')
 param location string = resourceGroup().location
 
-@description('Environment name (e.g., dev, test, prod)')
+`;
+    }
+
+    params += `@description('Environment name (e.g., dev, test, prod)')
 @allowed(['dev', 'test', 'staging', 'prod'])
 param environment string = 'dev'
 
-@description('Resource tags')
+`;
+
+    // Only add tags parameter if the resource supports it
+    if (supportsLocationAndTags) {
+        params += `@description('Resource tags')
 param tags object = {
   Environment: environment
   CreatedBy: 'Bicep Schema Builder'
@@ -797,6 +828,7 @@ param tags object = {
 }
 
 `;
+    }
 
     // Add resource-specific parameters based on schema
     if (schema.properties?.properties?.properties) {
@@ -931,16 +963,23 @@ param imageReference object = {
     return params;
 }
 
-function generateVariables(schema, resourceType) {
+function generateVariables(schema, resourceType, targetScope = 'resourceGroup') {
+    const supportsLocationAndTags = resourceSupportsLocationAndTags(resourceType, targetScope);
+    
     let variables = `// === VARIABLES ===
 
 var resourceNameFormatted = toLower(replace(resourceName, ' ', '-'))
-var commonTags = union(tags, {
+`;
+
+    // Only add commonTags if the resource supports tags
+    if (supportsLocationAndTags) {
+        variables += `var commonTags = union(tags, {
   ResourceType: '${resourceType}'
   DeployedBy: 'Bicep Schema Builder'
 })
 
 `;
+    }
 
     // Add resource-specific variables
     switch (resourceType) {
@@ -1154,8 +1193,6 @@ resource ${cleanResourceName} '${resourceType}@${getLatestApiVersion(schema)}' =
         case 'Microsoft.Resources/deployments':
             resource += `resource ${cleanResourceName} '${resourceType}@${getLatestApiVersion(schema)}' = {
   name: resourceNameFormatted
-  location: location
-  tags: commonTags
   properties: {
     mode: 'Incremental'
     template: {
@@ -1188,7 +1225,10 @@ resource ${cleanResourceName} '${resourceType}@${getLatestApiVersion(schema)}' =
     return resource;
 }
 
-function generateAdvancedOutputs(schema, cleanResourceName) {
+function generateAdvancedOutputs(schema, cleanResourceName, targetScope = 'resourceGroup') {
+    const resourceType = schema.properties?.type?.const;
+    const supportsLocationAndTags = resourceSupportsLocationAndTags(resourceType, targetScope);
+    
     let outputs = `// === OUTPUTS ===
 
 @description('Resource ID of the created resource')
@@ -1197,14 +1237,17 @@ output resourceId string = ${cleanResourceName}.id
 @description('Name of the created resource')
 output resourceName string = ${cleanResourceName}.name
 
-@description('Location of the created resource')
+`;
+
+    // Only add location output if the resource supports it
+    if (supportsLocationAndTags) {
+        outputs += `@description('Location of the created resource')
 output location string = ${cleanResourceName}.location
 
 `;
+    }
 
     // Add resource-specific outputs
-    const resourceType = schema.properties?.type?.const;
-    
     switch (resourceType) {
         case 'Microsoft.Network/virtualNetworks':
             outputs += `@description('Address space of the virtual network')
@@ -2377,10 +2420,18 @@ function loadConfigIntoForm(panel, config, prefix = '') {
 }
 
 function generateConfiguredResource(resourceId, schema, config, resourceName, resourceType, includeDependencies, resourceSchemas) {
+    const supportsLocationAndTags = resourceSupportsLocationAndTags(resourceType, 'resourceGroup');
+    
     let bicep = `resource ${resourceName} '${resourceType}@${getLatestApiVersion(schema)}' = {
   name: '\${resourcePrefix}-${resourceId}-\${environment}'
-  location: location
-  tags: commonTags\n`;
+`;
+
+    // Only add location and tags if the resource supports them
+    if (supportsLocationAndTags) {
+        bicep += `  location: location
+  tags: commonTags
+`;
+    }
 
     // Generate properties based on configuration
     if (Object.keys(config).length > 0) {
