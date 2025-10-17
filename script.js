@@ -20,11 +20,17 @@ function init() {
         // Initialize schema parser
         if (typeof SchemaParser !== 'undefined') {
             schemaParser = new SchemaParser();
+            console.log('✅ SchemaParser initialized');
+        } else {
+            console.warn('⚠️ SchemaParser not available - using basic validation only');
         }
         
         // Initialize Azure Resource Graph client
         if (typeof AzureResourceGraphClient !== 'undefined') {
             azureResourceGraph = new AzureResourceGraphClient();
+            console.log('✅ AzureResourceGraphClient initialized');
+        } else {
+            console.warn('⚠️ AzureResourceGraphClient not available');
         }
         
         // Set up event listeners
@@ -200,9 +206,15 @@ function setupEventListeners() {
         if (downloadBicepBtn) downloadBicepBtn.addEventListener('click', downloadBicepTemplate);
         
         // Schema Validator buttons
+        const validatorValidateBtn = document.getElementById('validatorValidateBtn');
+        const validatorFormatBtn = document.getElementById('validatorFormatBtn');
+        const validatorClearBtn = document.getElementById('validatorClearBtn');
         const runTestSuiteBtn = document.getElementById('runTestSuiteBtn');
         const loadSampleBtn = document.getElementById('loadSampleBtn');
         
+        if (validatorValidateBtn) validatorValidateBtn.addEventListener('click', validateSchema);
+        if (validatorFormatBtn) validatorFormatBtn.addEventListener('click', formatJSON);
+        if (validatorClearBtn) validatorClearBtn.addEventListener('click', clearEditor);
         if (runTestSuiteBtn) runTestSuiteBtn.addEventListener('click', runTestSuite);
         if (loadSampleBtn) loadSampleBtn.addEventListener('click', loadSampleCode);
         
@@ -277,6 +289,19 @@ function validateSchema() {
         const parsedContent = JSON.parse(editorContent);
         currentSchema = parsedContent;
 
+        // Check if schemaParser is initialized
+        if (!schemaParser) {
+            console.warn('SchemaParser not available, using basic validation');
+            // Perform basic validation without schemaParser
+            const basicResults = performBasicValidation(parsedContent);
+            if (basicResults.isValid) {
+                showValidationSuccess(basicResults);
+            } else {
+                showValidationErrors(basicResults);
+            }
+            return;
+        }
+
         // Check validation mode
         const validationMode = schemaParser.getValidationMode();
 
@@ -322,6 +347,54 @@ function validateSchemaRealTime() {
     } catch (error) {
         document.getElementById('schemaEditor').style.borderColor = '#dc3545';
     }
+}
+
+function performBasicValidation(schema) {
+    const results = {
+        isValid: true,
+        errors: [],
+        warnings: [],
+        info: []
+    };
+    
+    // Check if it's an ARM template
+    if (schema.$schema && schema.$schema.includes('deploymentTemplate')) {
+        results.info.push('Detected: ARM Deployment Template');
+        results.info.push(`Content Version: ${schema.contentVersion || 'Not specified'}`);
+        
+        if (schema.resources) {
+            results.info.push(`Resources: ${schema.resources.length}`);
+        }
+        if (schema.parameters) {
+            results.info.push(`Parameters: ${Object.keys(schema.parameters).length}`);
+        }
+        if (schema.variables) {
+            results.info.push(`Variables: ${Object.keys(schema.variables).length}`);
+        }
+        if (schema.outputs) {
+            results.info.push(`Outputs: ${Object.keys(schema.outputs).length}`);
+        }
+        
+        results.warnings.push('Full ARM template validation requires SchemaParser utility');
+    } else {
+        // Basic JSON Schema validation
+        if (!schema.type) {
+            results.errors.push('Missing required "type" property');
+            results.isValid = false;
+        } else {
+            results.info.push(`Schema Type: ${schema.type}`);
+        }
+        
+        if (schema.properties) {
+            results.info.push(`Properties: ${Object.keys(schema.properties).length}`);
+        }
+        
+        if (!schema.$schema) {
+            results.warnings.push('Consider adding $schema property');
+        }
+    }
+    
+    return results;
 }
 
 function performDetailedValidation(schema) {
@@ -4384,15 +4457,15 @@ function initializeSchemaValidator() {
 }
 
 function validateCode() {
-    const schemaEditor = document.getElementById('schemaEditor');
+    const codeInput = document.getElementById('codeInput');
     const validationOutput = document.getElementById('validationOutput');
     
-    if (!schemaEditor || !schemaEditor.value.trim()) {
+    if (!codeInput || !codeInput.value.trim()) {
         showNotificationPro('❌ Please enter some code to validate', 'error');
         return;
     }
     
-    const code = schemaEditor.value.trim();
+    const code = codeInput.value.trim();
     const currentMode = getCurrentValidationMode();
     
     try {
@@ -4798,9 +4871,9 @@ function displayTestResults(testResults, outputElement) {
 
 function loadSampleCode() {
     const currentMode = getCurrentValidationMode();
-    const schemaEditor = document.getElementById('schemaEditor');
+    const codeInput = document.getElementById('codeInput');
     
-    if (!schemaEditor) return;
+    if (!codeInput) return;
     
     let sampleCode = '';
     
@@ -4897,16 +4970,16 @@ output storageAccountId string = storageAccount.id`;
             break;
     }
     
-    schemaEditor.value = sampleCode;
+    codeInput.value = sampleCode;
     showNotificationPro(`✅ Sample ${getCurrentValidationMode()} code loaded`, 'success', 2000);
 }
 
 function clearValidation() {
-    const schemaEditor = document.getElementById('schemaEditor');
+    const codeInput = document.getElementById('codeInput');
     const validationOutput = document.getElementById('validationOutput');
     const testSuiteOutput = document.getElementById('testSuiteOutput');
     
-    if (schemaEditor) schemaEditor.value = '';
+    if (codeInput) codeInput.value = '';
     
     if (validationOutput) {
         validationOutput.innerHTML = `
