@@ -3,27 +3,33 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>🔧 Bicep Schema Builder - Interactive Azure Schema Validator</title>
-    <meta name="description" content="Interactive web tool for building, validating, and managing Azure Bicep JSON schemas. Perfect for Infrastructure as Code (IaC) developers.">
-    <meta name="keywords" content="Azure, Bicep, JSON Schema, Infrastructure as Code, IaC, Azure Resource Manager, ARM Templates">
+    <title>🔧 Bicep Schema Builder Pro - Interactive Azure Development Suite</title>
+    <meta name="description" content="Professional web tool for building, validating, and converting Azure Bicep schemas and ARM templates. Complete development suite for Infrastructure as Code.">
+    <meta name="keywords" content="Azure, Bicep, JSON Schema, Infrastructure as Code, IaC, Azure Resource Manager, ARM Templates, Schema Validation">
     <meta name="author" content="Bicep Schema Builder">
     
     <!-- Open Graph / Facebook -->
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://techaboo.github.io/bicep-schema-builder/">
-    <meta property="og:title" content="🔧 Bicep Schema Builder - Interactive Azure Schema Validator">
-    <meta property="og:description" content="Interactive web tool for building, validating, and managing Azure Bicep JSON schemas. Perfect for Infrastructure as Code (IaC) developers.">
+    <meta property="og:title" content="🔧 Bicep Schema Builder Pro - Interactive Azure Development Suite">
+    <meta property="og:description" content="Professional web tool for building, validating, and converting Azure Bicep schemas and ARM templates. Complete development suite for Infrastructure as Code.">
     <meta property="og:image" content="https://techaboo.github.io/bicep-schema-builder/og-image.png">
 
     <!-- Twitter -->
     <meta property="twitter:card" content="summary_large_image">
     <meta property="twitter:url" content="https://techaboo.github.io/bicep-schema-builder/">
-    <meta property="twitter:title" content="🔧 Bicep Schema Builder - Interactive Azure Schema Validator">
-    <meta property="twitter:description" content="Interactive web tool for building, validating, and managing Azure Bicep JSON schemas. Perfect for Infrastructure as Code (IaC) developers.">
+    <meta property="twitter:title" content="🔧 Bicep Schema Builder Pro - Interactive Azure Development Suite">
+    <meta property="twitter:description" content="Professional web tool for building, validating, and converting Azure Bicep schemas and ARM templates. Complete development suite for Infrastructure as Code.">
     <meta property="twitter:image" content="https://techaboo.github.io/bicep-schema-builder/og-image.png">
 
     <!-- Favicon -->
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🔧</text></svg>">
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
     <!-- Google Analytics 4 -->
     <script async src="https://www.googletagmanager.com/gtag/js?id=GA_MEASUREMENT_ID"></script>
@@ -35,7 +41,7 @@
         function gtag(){dataLayer.push(arguments);}
         gtag('js', new Date());
         gtag('config', GA_MEASUREMENT_ID, {
-            page_title: 'Bicep Schema Builder',
+            page_title: 'Bicep Schema Builder Pro',
             page_location: window.location.href
         });
         
@@ -55,211 +61,527 @@
 </head>
 <body>
     <div id="app">
-        <header>
-            <h1>🔧 Bicep Schema Builder</h1>
-            <p>Interactive tool for building and validating Azure Bicep schemas</p>
+        <!-- Enhanced Header with Navigation -->
+        <header class="app-header">
+            <div class="header-content">
+                <div class="logo-section">
+                    <div class="logo">
+                        <i class="fas fa-cogs"></i>
+                        <h1>Bicep Schema Builder <span class="pro-badge">PRO</span></h1>
+                    </div>
+                    <p class="tagline">Professional Azure Development Suite for Infrastructure as Code</p>
+                </div>
+                <div class="header-actions">
+                    <button id="themeToggle" class="theme-toggle" title="Toggle Dark/Light Theme">
+                        <i class="fas fa-moon"></i>
+                    </button>
+                    <div class="version-info">v2.0.0</div>
+                </div>
+            </div>
         </header>
-        
-        <main>
-            <section class="upload-section">
-                <h2>Upload Schema File</h2>
-                <div class="file-upload">
-                    <input type="file" id="schemaFile" accept=".json" />
-                    <label for="schemaFile">Choose JSON Schema File</label>
-                </div>
-            </section>
-            
-            <section class="editor-section">
-                <div class="section-header">
-                    <h2>Schema Editor</h2>
-                    <div class="validation-mode-toggle">
-                        <label class="mode-label">What are you validating?</label>
-                        <div class="toggle-buttons">
-                            <button id="resourceModeBtn" class="mode-btn active" data-mode="resource" title="Validate individual resource JSON schemas (for schema definitions)">
-                                📄 Resource Schema
-                            </button>
-                            <button id="templateModeBtn" class="mode-btn" data-mode="template" title="Validate complete ARM deployment templates (for actual deployments)">
-                                📦 Full ARM Template
-                            </button>
-                        </div>
-                        <div class="mode-indicator">
-                            <span id="currentMode">📄 Resource Schema</span>
-                            <span id="modeDescription" class="mode-description">For validating schema definitions</span>
-                        </div>
-                    </div>
-                </div>
-                <div class="editor-help-banner" id="editorHelpBanner">
-                    <span class="help-icon">💡</span>
-                    <span id="helpText">Paste a resource schema JSON or click a template below to get started</span>
-                </div>
-                <textarea id="schemaEditor" placeholder="Paste your JSON schema here or upload a file..."></textarea>
-                <div class="editor-actions">
-                    <button id="validateBtn" class="primary-btn">✅ Validate</button>
-                    <button id="formatBtn">✨ Format JSON</button>
-                    <button id="downloadBtn">💾 Download</button>
-                    <button id="exportBicep" class="bicep-export-btn">🔄 Convert to Bicep</button>
-                    <button id="clearEditorBtn" class="clear-btn">🗑️ Clear Editor</button>
-                </div>
-            </section>
-            
-            <section class="output-section">
-                <h2>Validation Results</h2>
-                <div id="validationOutput" class="output-panel">
-                    <p class="placeholder">Upload or paste a schema to see validation results...</p>
-                </div>
-            </section>
-            
-            <section class="templates-section">
-                <h2>📋 Load Template</h2>
-                <div class="template-category">
-                    <h3 class="category-title">🆕 Complete ARM Template Schema</h3>
-                    <p class="category-description">Master schema with ALL Azure resource types - use for validating full deployment templates</p>
-                    <div class="template-grid-featured">
-                        <button class="template-btn template-highlight" data-template="armtemplate" title="Load the complete ARM deployment template schema (includes all Azure resources)">
-                            📦 ARM Deployment Template
-                            <span class="template-badge">Full Template</span>
-                        </button>
-                    </div>
-                </div>
-                <div class="template-category">
-                    <h3 class="category-title">📄 Individual Resource Schemas</h3>
-                    <p class="category-description">Schemas for specific Azure resource types</p>
-                    <div class="template-grid">
-                        <button class="template-btn" data-template="storage" title="Storage Account resource schema">🗄️ Storage Account</button>
-                        <button class="template-btn" data-template="webapp" title="Web App resource schema">🌐 Web App</button>
-                        <button class="template-btn" data-template="vm" title="Virtual Machine resource schema">💻 Virtual Machine</button>
-                        <button class="template-btn" data-template="keyvault" title="Key Vault resource schema">🔐 Key Vault</button>
-                        <button class="template-btn" data-template="sqldatabase" title="SQL Database resource schema">🗃️ SQL Database</button>
-                        <button class="template-btn" data-template="functions" title="Azure Functions resource schema">⚡ Azure Functions</button>
-                        <button class="template-btn" data-template="appplan" title="App Service Plan resource schema">📋 App Service Plan</button>
-                        <button class="template-btn" data-template="vnet" title="Virtual Network resource schema">🌐 Virtual Network</button>
-                    </div>
-                </div>
-            </section>
-            
-            <section class="azure-integration-section">
-                <h2>☁️ Azure Integration</h2>
-                <div class="azure-controls">
-                    <button id="azureAuth" class="azure-btn">🔐 Connect to Azure</button>
-                    <button id="azureResourceTypes" class="azure-btn" disabled>📋 Browse Resource Types</button>
-                    <button id="azureValidate" class="azure-btn" disabled>✅ Validate with Azure</button>
-                </div>
-                <div id="azureStatus" class="azure-status">
-                    <p>🔒 Not connected to Azure. Connect to enable live resource validation.</p>
-                </div>
-            </section>
-            
-            <section class="deployment-builder-section">
-                <h2>🚀 Deployment Builder</h2>
-                <div class="deployment-builder">
-                    <h3>Select Resources for Deployment</h3>
-                    <div class="resource-selector">
-                        <div class="resource-checkboxes">
-                            <label class="resource-checkbox">
-                                <input type="checkbox" value="storage" data-schema="storageAccount">
-                                <span class="checkmark">🗄️</span>
-                                <span class="resource-name">Storage Account</span>
-                            </label>
-                            <label class="resource-checkbox">
-                                <input type="checkbox" value="webapp" data-schema="webApp">
-                                <span class="checkmark">🌐</span>
-                                <span class="resource-name">Web App</span>
-                            </label>
-                            <label class="resource-checkbox">
-                                <input type="checkbox" value="vm" data-schema="virtualMachine">
-                                <span class="checkmark">💻</span>
-                                <span class="resource-name">Virtual Machine</span>
-                            </label>
-                            <label class="resource-checkbox">
-                                <input type="checkbox" value="keyvault" data-schema="keyVault">
-                                <span class="checkmark">🔐</span>
-                                <span class="resource-name">Key Vault</span>
-                            </label>
-                            <label class="resource-checkbox">
-                                <input type="checkbox" value="sqldatabase" data-schema="sqlDatabase">
-                                <span class="checkmark">🗃️</span>
-                                <span class="resource-name">SQL Database</span>
-                            </label>
-                            <label class="resource-checkbox">
-                                <input type="checkbox" value="functions" data-schema="azureFunctions">
-                                <span class="checkmark">⚡</span>
-                                <span class="resource-name">Azure Functions</span>
-                            </label>
-                            <label class="resource-checkbox">
-                                <input type="checkbox" value="appplan" data-schema="appServicePlan">
-                                <span class="checkmark">📋</span>
-                                <span class="resource-name">App Service Plan</span>
-                            </label>
-                            <label class="resource-checkbox">
-                                <input type="checkbox" value="vnet" data-schema="virtualNetwork">
-                                <span class="checkmark">🌐</span>
-                                <span class="resource-name">Virtual Network</span>
-                            </label>
-                        </div>
-                        <div class="deployment-options">
-                            <h4>Deployment Options</h4>
-                            <label class="option-checkbox">
-                                <input type="checkbox" id="includeParameters" checked>
-                                <span>Include Parameter Files</span>
-                            </label>
-                            <label class="option-checkbox">
-                                <input type="checkbox" id="includeDependencies" checked>
-                                <span>Auto-detect Dependencies</span>
-                            </label>
-                            <label class="option-checkbox">
-                                <input type="checkbox" id="includeOutputs" checked>
-                                <span>Include Resource Outputs</span>
-                            </label>
-                            <label class="option-checkbox">
-                                <input type="checkbox" id="generateModules">
-                                <span>Generate as Modules</span>
-                            </label>
-                        </div>
-                        <div class="deployment-actions">
-                            <button id="validateAllResources" class="validate-btn">🔍 Validate All</button>
-                            <button id="configureResources" class="config-btn">⚙️ Configure Resources</button>
-                            <button id="previewDeployment" class="preview-btn">👁️ Preview Deployment</button>
-                            <button id="exportSelectedBicep" class="export-btn">📦 Export Selected Resources</button>
-                            <button id="downloadDeploymentPackage" class="download-btn">⬇️ Download Package</button>
-                        </div>
-                    </div>
-                    <div id="selectedResourcesPreview" class="selected-preview">
-                        <h4>Selected Resources (0)</h4>
-                        <div class="selected-list"></div>
-                    </div>
-                </div>
-            </section>
 
-            <!-- Resource Configuration Modal -->
-            <div id="resourceConfigModal" class="modal-overlay" style="display: none;">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h3 id="configModalTitle">Configure Resources</h3>
-                        <button id="closeConfigModal" class="close-btn">✕</button>
+        <!-- Navigation Tabs -->
+        <nav class="main-navigation">
+            <div class="nav-tabs">
+                <button class="nav-tab active" data-tab="schema-builder">
+                    <i class="fas fa-file-code"></i>
+                    <span>Schema Builder</span>
+                </button>
+                <button class="nav-tab" data-tab="arm-converter">
+                    <i class="fas fa-exchange-alt"></i>
+                    <span>ARM Converter</span>
+                </button>
+                <button class="nav-tab" data-tab="schema-validator">
+                    <i class="fas fa-check-circle"></i>
+                    <span>Schema Validator</span>
+                </button>
+                <button class="nav-tab" data-tab="templates">
+                    <i class="fas fa-folder-open"></i>
+                    <span>Templates</span>
+                </button>
+            </div>
+        </nav>
+
+        <!-- Tab Content -->
+        <main class="main-content">
+            <!-- Schema Builder Tab -->
+            <div id="schema-builder" class="tab-content active">
+                <div class="tab-header">
+                    <h2><i class="fas fa-file-code"></i> Schema Builder & Editor</h2>
+                    <p>Create, edit, and validate Azure Bicep JSON schemas with advanced tooling</p>
+                </div>
+                
+                <div class="content-grid">
+                    <section class="upload-section card">
+                        <div class="card-header">
+                            <h3><i class="fas fa-upload"></i> Upload Schema</h3>
+                        </div>
+                        <div class="card-content">
+                            <div class="file-upload">
+                                <input type="file" id="schemaFile" accept=".json" />
+                                <label for="schemaFile" class="file-upload-label">
+                                    <i class="fas fa-cloud-upload-alt"></i>
+                                    <span>Choose JSON Schema File</span>
+                                </label>
+                            </div>
+                        </div>
+                    </section>
+                    
+                    <section class="editor-section card">
+                        <div class="card-header">
+                            <h3><i class="fas fa-edit"></i> Schema Editor</h3>
+                            <div class="editor-actions">
+                                <button id="validateBtn" class="btn btn-primary">
+                                    <i class="fas fa-check"></i> Validate
+                                </button>
+                                <button id="formatBtn" class="btn btn-secondary">
+                                    <i class="fas fa-magic"></i> Format
+                                </button>
+                                <button id="downloadBtn" class="btn btn-success">
+                                    <i class="fas fa-download"></i> Download
+                                </button>
+                                <button id="clearEditorBtn" class="btn btn-outline">
+                                    <i class="fas fa-trash"></i> Clear
+                                </button>
+                            </div>
+                        </div>
+                        <div class="card-content">
+                            <div class="editor-container">
+                                <textarea id="schemaEditor" 
+                                         placeholder="Paste your JSON schema here or upload a file..." 
+                                         rows="20" 
+                                         spellcheck="false"></textarea>
+                            </div>
+                        </div>
+                    </section>
+                </div>
+
+                <!-- Results Section -->
+                <section class="results-section card">
+                    <div class="card-header">
+                        <h3><i class="fas fa-chart-line"></i> Validation Results</h3>
                     </div>
-                    <div class="modal-body">
-                        <div class="config-tabs">
-                            <div id="configTabs" class="tab-buttons"></div>
-                            <div id="configPanels" class="tab-panels"></div>
+                    <div class="card-content">
+                        <div id="results" class="results-container">
+                            <div class="placeholder-state">
+                                <i class="fas fa-info-circle"></i>
+                                <p>Upload or paste a schema and click "Validate" to see results here.</p>
+                            </div>
                         </div>
                     </div>
-                    <div class="modal-footer">
-                        <button id="resetConfig" class="secondary-btn">🔄 Reset to Defaults</button>
-                        <button id="saveConfig" class="primary-btn">💾 Save Configuration</button>
-                    </div>
-                </div>
-            </section>
+                </section>
 
-            <section class="theme-section">
-                <h2>⚙️ Settings</h2>
-                <div class="settings-controls">
-                    <button id="themeToggle" class="theme-btn">🌙 Dark Mode</button>
-                    <button id="exportYaml" class="export-btn">📄 Export YAML</button>
-                    <button id="exportBicep" class="export-btn">🔧 Export Bicep</button>
+                <!-- Export Options -->
+                <section class="export-section card">
+                    <div class="card-header">
+                        <h3><i class="fas fa-file-export"></i> Export Options</h3>
+                    </div>
+                    <div class="card-content">
+                        <div class="export-buttons">
+                            <button id="exportYaml" class="btn btn-info">
+                                <i class="fas fa-file-code"></i> Export as YAML
+                            </button>
+                            <button id="exportBicep" class="btn btn-warning">
+                                <i class="fas fa-code"></i> Export as Bicep
+                            </button>
+                        </div>
+                    </div>
+                </section>
+            </div>
+
+            <!-- ARM Converter Tab -->
+            <div id="arm-converter" class="tab-content">
+                <div class="tab-header">
+                    <h2><i class="fas fa-exchange-alt"></i> ARM Template to Bicep Converter</h2>
+                    <p>Convert your existing ARM templates to modern, configurable Bicep templates with network configuration options</p>
                 </div>
-            </section>
+                
+                <div class="converter-workspace">
+                    <div class="converter-grid">
+                        <!-- Input Section -->
+                        <section class="converter-input card">
+                            <div class="card-header">
+                                <h3><i class="fas fa-file-import"></i> ARM Template Input</h3>
+                            </div>
+                            <div class="card-content">
+                                <textarea id="armTemplateInput" 
+                                         placeholder="Paste your ARM template JSON here..." 
+                                         rows="15" 
+                                         spellcheck="false"></textarea>
+                                <div class="converter-actions">
+                                    <button id="analyzeArmBtn" class="btn btn-primary">
+                                        <i class="fas fa-search"></i> Analyze Template
+                                    </button>
+                                    <button id="convertToBicepBtn" class="btn btn-success" disabled>
+                                        <i class="fas fa-exchange-alt"></i> Convert to Bicep
+                                    </button>
+                                </div>
+                            </div>
+                        </section>
+                        
+                        <!-- Configuration Section -->
+                        <section class="converter-config card" id="converterConfig" style="display: none;">
+                            <div class="card-header">
+                                <h3><i class="fas fa-cogs"></i> Configuration Options</h3>
+                            </div>
+                            <div class="card-content">
+                                <div class="config-group">
+                                    <label><i class="fas fa-map-marker-alt"></i> Target Location:</label>
+                                    <select id="targetLocation" class="form-select">
+                                        <option value="eastus">East US</option>
+                                        <option value="westus2">West US 2</option>
+                                        <option value="centralus">Central US</option>
+                                        <option value="westeurope">West Europe</option>
+                                        <option value="eastasia">East Asia</option>
+                                        <option value="australiaeast">Australia East</option>
+                                    </select>
+                                </div>
+                                
+                                <div class="config-group">
+                                    <label><i class="fas fa-network-wired"></i> Network Configuration:</label>
+                                    <div class="network-mode-toggle">
+                                        <label class="radio-option">
+                                            <input type="radio" name="networkMode" value="create" checked>
+                                            <span class="radio-text">Create new VNet and Subnet</span>
+                                        </label>
+                                        <label class="radio-option">
+                                            <input type="radio" name="networkMode" value="existing">
+                                            <span class="radio-text">Use existing VNet and Subnet</span>
+                                        </label>
+                                    </div>
+                                    
+                                    <div id="createNetworkConfig" class="network-config">
+                                        <input type="text" id="vnetAddressSpace" 
+                                               placeholder="VNet Address (e.g., 10.0.0.0/16)" 
+                                               value="10.0.0.0/16" 
+                                               class="form-input">
+                                        <input type="text" id="subnetAddressSpace" 
+                                               placeholder="Subnet Address (e.g., 10.0.1.0/24)" 
+                                               value="10.0.1.0/24" 
+                                               class="form-input">
+                                    </div>
+                                    
+                                    <div id="existingNetworkConfig" class="network-config" style="display: none;">
+                                        <div class="existing-network-inputs">
+                                            <input type="text" id="existingVnetName" 
+                                                   placeholder="Existing VNet Name (e.g., myapp-vnet)" 
+                                                   class="form-input">
+                                            <input type="text" id="existingSubnetName" 
+                                                   placeholder="Existing Subnet Name (e.g., default)" 
+                                                   class="form-input">
+                                        </div>
+                                        <div class="resource-group-input">
+                                            <input type="text" id="existingVnetResourceGroup" 
+                                                   placeholder="VNet Resource Group (leave empty if same RG)" 
+                                                   class="form-input">
+                                        </div>
+                                        <div class="network-helper">
+                                            <small><i class="fas fa-lightbulb"></i> Tip: You can find VNet and subnet names in the Azure Portal under Virtual Networks</small>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="config-group">
+                                    <label><i class="fas fa-server"></i> VM Configuration:</label>
+                                    <div class="vm-config">
+                                        <select id="vmSize" class="form-select">
+                                            <option value="Standard_B2s">Standard_B2s (2 vCPU, 4 GB RAM)</option>
+                                            <option value="Standard_D2s_v3">Standard_D2s_v3 (2 vCPU, 8 GB RAM)</option>
+                                            <option value="Standard_D4s_v3" selected>Standard_D4s_v3 (4 vCPU, 16 GB RAM)</option>
+                                            <option value="Standard_D8s_v3">Standard_D8s_v3 (8 vCPU, 32 GB RAM)</option>
+                                        </select>
+                                        <select id="osType" class="form-select">
+                                            <option value="Linux">Linux</option>
+                                            <option value="Windows">Windows</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                
+                                <div class="config-group">
+                                    <label><i class="fas fa-tools"></i> Additional Options:</label>
+                                    <div class="additional-options">
+                                        <label class="checkbox-option">
+                                            <input type="checkbox" id="includePublicIP" checked>
+                                            <span class="checkmark"></span>
+                                            <span>Include Public IP</span>
+                                        </label>
+                                        <label class="checkbox-option">
+                                            <input type="checkbox" id="includeNSG" checked>
+                                            <span class="checkmark"></span>
+                                            <span>Include Network Security Group</span>
+                                        </label>
+                                        <label class="checkbox-option">
+                                            <input type="checkbox" id="includeBootDiagnostics" checked>
+                                            <span class="checkmark"></span>
+                                            <span>Include Boot Diagnostics</span>
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                        </section>
+                    </div>
+                    
+                    <!-- Analysis Results -->
+                    <section class="analysis-results card" id="analysisResults" style="display: none;">
+                        <div class="card-header">
+                            <h3><i class="fas fa-chart-bar"></i> Template Analysis</h3>
+                        </div>
+                        <div class="card-content">
+                            <div id="analysisContent" class="analysis-content"></div>
+                        </div>
+                    </section>
+                    
+                    <!-- Output Section -->
+                    <section class="converter-output card" id="converterOutput" style="display: none;">
+                        <div class="card-header">
+                            <h3><i class="fas fa-code"></i> Generated Bicep Template</h3>
+                            <div class="output-actions">
+                                <button id="copyBicepBtn" class="btn btn-outline">
+                                    <i class="fas fa-copy"></i> Copy
+                                </button>
+                                <button id="downloadBicepBtn" class="btn btn-primary">
+                                    <i class="fas fa-download"></i> Download
+                                </button>
+                            </div>
+                        </div>
+                        <div class="card-content">
+                            <textarea id="bicepOutput" readonly rows="20" spellcheck="false"></textarea>
+                        </div>
+                    </section>
+                </div>
+            </div>
+
+            <!-- Schema Validator Tab -->
+            <div id="schema-validator" class="tab-content">
+                <div class="tab-header">
+                    <h2><i class="fas fa-check-circle"></i> Schema Validator & Testing Suite</h2>
+                    <p>Validate Bicep templates, JSON schemas, and ARM templates with comprehensive testing capabilities</p>
+                </div>
+                
+                <div class="validator-workspace">
+                    <section class="validator-input card">
+                        <div class="card-header">
+                            <h3><i class="fas fa-code"></i> Code Input</h3>
+                        </div>
+                        <div class="card-content">
+                            <div class="validation-mode-toggle">
+                                <label class="mode-label">What are you validating?</label>
+                                <div class="toggle-buttons">
+                                    <button id="resourceModeBtn" class="mode-btn active" data-mode="resource" title="Validate individual resource JSON schemas (for schema definitions)">
+                                        📄 Resource Schema
+                                    </button>
+                                    <button id="templateModeBtn" class="mode-btn" data-mode="template" title="Validate complete ARM deployment templates (for actual deployments)">
+                                        📦 Full ARM Template
+                                    </button>
+                                    <button id="bicepModeBtn" class="mode-btn" data-mode="bicep" title="Validate Bicep template syntax and structure">
+                                        🔧 Bicep Template
+                                    </button>
+                                </div>
+                                <div class="mode-indicator">
+                                    <span id="currentMode">📄 Resource Schema</span>
+                                    <span id="modeDescription" class="mode-description">For validating schema definitions</span>
+                                </div>
+                            </div>
+                            
+                            <div class="editor-help-banner" id="editorHelpBanner">
+                                <span class="help-icon">💡</span>
+                                <span id="helpText">Paste a resource schema JSON or click a template below to get started</span>
+                            </div>
+                            
+                            <textarea id="schemaEditor" placeholder="Paste your JSON schema here or upload a file..." rows="15"></textarea>
+                            
+                            <div class="editor-actions">
+                                <button id="validateBtn" class="btn btn-primary">✅ Validate</button>
+                                <button id="formatBtn" class="btn btn-secondary">✨ Format Code</button>
+                                <button id="runTestSuiteBtn" class="btn btn-success">🧪 Run Test Suite</button>
+                                <button id="loadSampleBtn" class="btn btn-info">� Load Sample</button>
+                                <button id="clearEditorBtn" class="btn btn-warning">🗑️ Clear Editor</button>
+                            </div>
+                        </div>
+                    </section>
+                    
+                    <section class="validation-results card">
+                        <div class="card-header">
+                            <h3><i class="fas fa-tasks"></i> Validation Results</h3>
+                        </div>
+                        <div class="card-content">
+                            <div id="validationOutput" class="output-panel">
+                                <div class="no-results">
+                                    <i class="fas fa-info-circle"></i>
+                                    <p>No validation results yet. Click "Validate" to start.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+                    
+                    <section class="test-results card">
+                        <div class="card-header">
+                            <h3><i class="fas fa-flask"></i> Test Suite Results</h3>
+                        </div>
+                        <div class="card-content">
+                            <div id="testSuiteOutput" class="output-panel">
+                                <div class="no-results">
+                                    <i class="fas fa-vial"></i>
+                                    <p>No test results yet. Click "Run Test Suite" for comprehensive testing.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+                </div>
+            </div>
+
+            <!-- Templates Tab -->
+            <div id="templates" class="tab-content">
+                <div class="tab-header">
+                    <h2><i class="fas fa-folder-open"></i> Bicep Templates Library</h2>
+                    <p>Pre-built Bicep templates for common Azure resources and deployment scenarios</p>
+                </div>
+                
+                <div class="templates-workspace">
+                    <section class="template-library card">
+                        <div class="card-header">
+                            <h3><i class="fas fa-book-open"></i> Template Library</h3>
+                            <p>Load pre-built schemas and templates for common Azure resources</p>
+                        </div>
+                        <div class="card-content">
+                            <div class="template-category">
+                                <h4 class="category-title">🆕 Complete ARM Template Schema</h4>
+                                <p class="category-description">Master schema with ALL Azure resource types - use for validating full deployment templates</p>
+                                <div class="template-grid-featured">
+                                    <button class="template-btn template-highlight" data-template="armtemplate" title="Load the complete ARM deployment template schema (includes all Azure resources)">
+                                        📦 ARM Deployment Template
+                                        <span class="template-badge">Full Template</span>
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <div class="template-category">
+                                <h4 class="category-title">📄 Individual Resource Schemas</h4>
+                                <p class="category-description">Schemas for specific Azure resource types</p>
+                                <div class="template-grid">
+                                    <button class="template-btn" data-template="storage" title="Storage Account resource schema">🗄️ Storage Account</button>
+                                    <button class="template-btn" data-template="webapp" title="Web App resource schema">🌐 Web App</button>
+                                    <button class="template-btn" data-template="vm" title="Virtual Machine resource schema">💻 Virtual Machine</button>
+                                    <button class="template-btn" data-template="keyvault" title="Key Vault resource schema">🔐 Key Vault</button>
+                                    <button class="template-btn" data-template="sqldatabase" title="SQL Database resource schema">🗃️ SQL Database</button>
+                                    <button class="template-btn" data-template="functions" title="Azure Functions resource schema">⚡ Azure Functions</button>
+                                    <button class="template-btn" data-template="appplan" title="App Service Plan resource schema">📋 App Service Plan</button>
+                                    <button class="template-btn" data-template="vnet" title="Virtual Network resource schema">🌐 Virtual Network</button>
+                                </div>
+                            </div>
+                            
+                            <div class="template-category">
+                                <h4 class="category-title">� Bicep Templates</h4>
+                                <p class="category-description">Ready-to-use Bicep templates for common deployment scenarios</p>
+                                <div class="template-grid">
+                                    <button class="template-btn" data-template="bicep-webapp" title="Complete web app deployment with app service plan">🌐 Web App + Plan</button>
+                                    <button class="template-btn" data-template="bicep-vm" title="Virtual machine with networking">� VM + Network</button>
+                                    <button class="template-btn" data-template="bicep-storage" title="Storage account with containers">🗄️ Storage + Containers</button>
+                                    <button class="template-btn" data-template="bicep-keyvault" title="Key vault with access policies">🔐 Key Vault + Policies</button>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+                    
+                    <section class="deployment-builder card">
+                        <div class="card-header">
+                            <h3><i class="fas fa-rocket"></i> Deployment Builder</h3>
+                            <p>Select and configure resources for multi-resource deployments</p>
+                        </div>
+                        <div class="card-content">
+                            <div class="resource-selector">
+                                <h4>🎯 Select Resources for Deployment</h4>
+                                <div class="resource-checkboxes">
+                                    <label class="resource-checkbox">
+                                        <input type="checkbox" value="storage" data-schema="storageAccount">
+                                        <span class="checkmark">🗄️</span>
+                                        <span class="resource-name">Storage Account</span>
+                                    </label>
+                                    <label class="resource-checkbox">
+                                        <input type="checkbox" value="webapp" data-schema="webApp">
+                                        <span class="checkmark">🌐</span>
+                                        <span class="resource-name">Web App</span>
+                                    </label>
+                                    <label class="resource-checkbox">
+                                        <input type="checkbox" value="vm" data-schema="virtualMachine">
+                                        <span class="checkmark">💻</span>
+                                        <span class="resource-name">Virtual Machine</span>
+                                    </label>
+                                    <label class="resource-checkbox">
+                                        <input type="checkbox" value="keyvault" data-schema="keyVault">
+                                        <span class="checkmark">🔐</span>
+                                        <span class="resource-name">Key Vault</span>
+                                    </label>
+                                    <label class="resource-checkbox">
+                                        <input type="checkbox" value="sqldatabase" data-schema="sqlDatabase">
+                                        <span class="checkmark">🗃️</span>
+                                        <span class="resource-name">SQL Database</span>
+                                    </label>
+                                    <label class="resource-checkbox">
+                                        <input type="checkbox" value="functions" data-schema="azureFunctions">
+                                        <span class="checkmark">⚡</span>
+                                        <span class="resource-name">Azure Functions</span>
+                                    </label>
+                                </div>
+                                
+                                <div class="deployment-options">
+                                    <h4>⚙️ Deployment Options</h4>
+                                    <label class="option-checkbox">
+                                        <input type="checkbox" id="includeParameters" checked>
+                                        <span>Include Parameter Files</span>
+                                    </label>
+                                    <label class="option-checkbox">
+                                        <input type="checkbox" id="includeDependencies" checked>
+                                        <span>Auto-detect Dependencies</span>
+                                    </label>
+                                    <label class="option-checkbox">
+                                        <input type="checkbox" id="includeOutputs" checked>
+                                        <span>Include Resource Outputs</span>
+                                    </label>
+                                    <label class="option-checkbox">
+                                        <input type="checkbox" id="generateModules">
+                                        <span>Generate as Modules</span>
+                                    </label>
+                                </div>
+                                
+                                <div class="deployment-actions">
+                                    <button id="validateAllResources" class="btn btn-primary">🔍 Validate All</button>
+                                    <button id="configureResources" class="btn btn-secondary">⚙️ Configure Resources</button>
+                                    <button id="previewDeployment" class="btn btn-info">👁️ Preview Deployment</button>
+                                    <button id="exportSelectedBicep" class="btn btn-success">📦 Export Selected Resources</button>
+                                    <button id="downloadDeploymentPackage" class="btn btn-warning">⬇️ Download Package</button>
+                                </div>
+                                
+                                <div id="selectedResourcesPreview" class="selected-preview">
+                                    <h4>Selected Resources (0)</h4>
+                                    <div class="selected-list"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+                </div>
+            </div>
         </main>
-    </div>
+        
+        <!-- Resource Configuration Modal -->
+        <div id="resourceConfigModal" class="modal-overlay" style="display: none;">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3 id="configModalTitle">Configure Resources</h3>
+                    <button id="closeConfigModal" class="close-btn">✕</button>
+                </div>
+                <div class="modal-body">
+                    <div class="config-tabs">
+                        <div id="configTabs" class="tab-buttons"></div>
+                        <div id="configPanels" class="tab-panels"></div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button id="resetConfig" class="secondary-btn">🔄 Reset to Defaults</button>
+                    <button id="saveConfig" class="primary-btn">💾 Save Configuration</button>
+                </div>
+            </div>
+        </div>
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <script src="utils/schemaParser.js"></script>

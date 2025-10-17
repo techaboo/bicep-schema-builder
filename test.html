@@ -1,0 +1,572 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bicep Schema Builder Pro - Test Suite</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        .test-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 10000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .test-panel {
+            background: var(--bg-primary);
+            border-radius: var(--radius-xl);
+            padding: var(--spacing-xl);
+            max-width: 600px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+            box-shadow: var(--shadow-heavy);
+        }
+        
+        .test-header {
+            text-align: center;
+            margin-bottom: var(--spacing-lg);
+        }
+        
+        .test-results {
+            background: var(--bg-secondary);
+            border-radius: var(--radius-md);
+            padding: var(--spacing-md);
+            margin-bottom: var(--spacing-md);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: var(--font-size-sm);
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        
+        .test-actions {
+            display: flex;
+            gap: var(--spacing-md);
+            justify-content: center;
+        }
+        
+        .close-tests {
+            position: absolute;
+            top: 10px;
+            right: 15px;
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            color: var(--text-secondary);
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <!-- Enhanced Header -->
+        <header class="app-header">
+            <div class="header-content">
+                <div class="logo-section">
+                    <div class="logo">
+                        <i class="fas fa-cube"></i>
+                        <h1>Bicep Schema Builder <span class="pro-badge">PRO</span></h1>
+                    </div>
+                    <p class="tagline">Professional Azure Bicep Template Development Suite</p>
+                </div>
+                <div class="header-actions">
+                    <button class="theme-toggle" aria-label="Toggle theme">
+                        <i class="fas fa-moon"></i>
+                    </button>
+                    <div class="version-info">v2.0.0</div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Enhanced Navigation -->
+        <nav class="main-navigation">
+            <div class="nav-tabs">
+                <button class="nav-tab active" data-tab="schema-builder">
+                    <i class="fas fa-code"></i>
+                    Schema Builder
+                </button>
+                <button class="nav-tab" data-tab="arm-converter">
+                    <i class="fas fa-exchange-alt"></i>
+                    ARM Converter
+                </button>
+                <button class="nav-tab" data-tab="schema-validator">
+                    <i class="fas fa-check-circle"></i>
+                    Schema Validator
+                </button>
+                <button class="nav-tab" data-tab="templates">
+                    <i class="fas fa-layer-group"></i>
+                    Templates
+                </button>
+            </div>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Schema Builder Tab -->
+            <div class="tab-content active" id="schema-builder">
+                <div class="tab-header">
+                    <h2><i class="fas fa-code"></i> Bicep Schema Builder</h2>
+                    <p>Create and validate Azure Bicep schemas with intelligent assistance</p>
+                </div>
+
+                <div class="content-grid">
+                    <!-- Schema Editor -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h3><i class="fas fa-edit"></i> Schema Editor</h3>
+                        </div>
+                        <div class="card-content">
+                            <div class="editor-container">
+                                <textarea id="schemaEditor" placeholder="Enter your Bicep schema here..."></textarea>
+                            </div>
+                            <div class="editor-actions">
+                                <button id="validateBtn" class="btn btn-success">
+                                    <i class="fas fa-check-circle"></i> Validate
+                                </button>
+                                <button id="formatBtn" class="btn btn-info">
+                                    <i class="fas fa-indent"></i> Format
+                                </button>
+                                <button id="clearBtn" class="btn btn-secondary">
+                                    <i class="fas fa-eraser"></i> Clear
+                                </button>
+                                <button id="downloadBtn" class="btn btn-primary">
+                                    <i class="fas fa-download"></i> Download
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Results Panel -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h3><i class="fas fa-list-alt"></i> Validation Results</h3>
+                        </div>
+                        <div class="card-content">
+                            <div id="outputPanel" class="results-container">
+                                <div class="placeholder-state">
+                                    <i class="fas fa-clipboard-check"></i>
+                                    <p>Validation results will appear here</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Template Library -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3><i class="fas fa-layer-group"></i> Quick Templates</h3>
+                    </div>
+                    <div class="card-content">
+                        <div class="template-grid">
+                            <button class="template-btn" data-template="storage-account">
+                                <i class="fas fa-database"></i> Storage Account
+                            </button>
+                            <button class="template-btn" data-template="web-app">
+                                <i class="fas fa-globe"></i> Web App
+                            </button>
+                            <button class="template-btn" data-template="virtual-machine">
+                                <i class="fas fa-server"></i> Virtual Machine
+                            </button>
+                            <button class="template-btn" data-template="key-vault">
+                                <i class="fas fa-key"></i> Key Vault
+                            </button>
+                            <button class="template-btn" data-template="sql-database">
+                                <i class="fas fa-database"></i> SQL Database
+                            </button>
+                            <button class="template-btn" data-template="app-service-plan">
+                                <i class="fas fa-server"></i> App Service Plan
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ARM Converter Tab -->
+            <div class="tab-content" id="arm-converter">
+                <div class="tab-header">
+                    <h2><i class="fas fa-exchange-alt"></i> ARM to Bicep Converter</h2>
+                    <p>Convert ARM templates to Bicep with advanced configuration options</p>
+                </div>
+
+                <div class="converter-workspace">
+                    <div class="converter-grid">
+                        <!-- ARM Input -->
+                        <div class="card">
+                            <div class="card-header">
+                                <h3><i class="fas fa-file-code"></i> ARM Template Input</h3>
+                            </div>
+                            <div class="card-content">
+                                <textarea id="armTemplateInput" placeholder="Paste your ARM template JSON here..."></textarea>
+                                <div class="converter-actions">
+                                    <button id="analyzeBtn" class="btn btn-info">
+                                        <i class="fas fa-search"></i> Analyze
+                                    </button>
+                                    <button id="convertBtn" class="btn btn-success">
+                                        <i class="fas fa-magic"></i> Convert
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Configuration -->
+                        <div class="card">
+                            <div class="card-header">
+                                <h3><i class="fas fa-cogs"></i> Configuration</h3>
+                            </div>
+                            <div class="card-content">
+                                <div class="config-group">
+                                    <label><i class="fas fa-network-wired"></i> Network Configuration</label>
+                                    <div class="network-mode-toggle">
+                                        <div class="radio-option">
+                                            <input type="radio" id="createNew" name="networkMode" value="new" checked>
+                                            <span>Create new VNet</span>
+                                        </div>
+                                        <div class="radio-option">
+                                            <input type="radio" id="useExisting" name="networkMode" value="existing">
+                                            <span>Use existing VNet</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="config-group">
+                                    <label><i class="fas fa-server"></i> VM Configuration</label>
+                                    <div class="vm-config">
+                                        <select id="vmSize" class="form-select">
+                                            <option value="Standard_B2s">Standard_B2s</option>
+                                            <option value="Standard_DS2_v2">Standard_DS2_v2</option>
+                                            <option value="Standard_F2s_v2">Standard_F2s_v2</option>
+                                        </select>
+                                        <input type="text" id="adminUsername" class="form-input" placeholder="Admin Username">
+                                    </div>
+                                </div>
+
+                                <div class="config-group" id="existingNetworkConfig" style="display: none;">
+                                    <label><i class="fas fa-link"></i> Existing Network Details</label>
+                                    <div class="existing-network-inputs">
+                                        <input type="text" id="existingVNetName" class="form-input" placeholder="VNet Name">
+                                        <input type="text" id="existingSubnetName" class="form-input" placeholder="Subnet Name">
+                                    </div>
+                                    <input type="text" id="existingResourceGroup" class="form-input" placeholder="Resource Group Name">
+                                </div>
+
+                                <div class="config-group">
+                                    <label><i class="fas fa-plus-circle"></i> Additional Options</label>
+                                    <div class="additional-options">
+                                        <div class="checkbox-option">
+                                            <input type="checkbox" id="includeNSG">
+                                            <span>Include Network Security Group</span>
+                                        </div>
+                                        <div class="checkbox-option">
+                                            <input type="checkbox" id="includePublicIP">
+                                            <span>Include Public IP</span>
+                                        </div>
+                                        <div class="checkbox-option">
+                                            <input type="checkbox" id="includeDiagnostics">
+                                            <span>Include Boot Diagnostics</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Bicep Output -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h3><i class="fas fa-file-alt"></i> Generated Bicep Template</h3>
+                        </div>
+                        <div class="card-content">
+                            <textarea id="bicepOutput" readonly placeholder="Converted Bicep template will appear here..."></textarea>
+                            <div class="output-actions">
+                                <button id="copyBicepBtn" class="btn btn-info">
+                                    <i class="fas fa-copy"></i> Copy
+                                </button>
+                                <button id="downloadBicepBtn" class="btn btn-success">
+                                    <i class="fas fa-download"></i> Download
+                                </button>
+                                <button id="formatBicepBtn" class="btn btn-warning">
+                                    <i class="fas fa-indent"></i> Format
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Schema Validator Tab -->
+            <div class="tab-content" id="schema-validator">
+                <div class="tab-header">
+                    <h2><i class="fas fa-check-circle"></i> Schema Validator</h2>
+                    <p>Comprehensive validation for Bicep, ARM, and JSON schemas</p>
+                </div>
+
+                <div class="validator-workspace">
+                    <!-- Validation Controls -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h3><i class="fas fa-sliders-h"></i> Validation Mode</h3>
+                        </div>
+                        <div class="card-content">
+                            <div class="btn-group validation-controls">
+                                <button class="btn btn-secondary mode-btn active" data-mode="bicep">
+                                    <i class="fas fa-cube"></i> Bicep
+                                </button>
+                                <button class="btn btn-secondary mode-btn" data-mode="arm">
+                                    <i class="fas fa-cloud"></i> ARM
+                                </button>
+                                <button class="btn btn-secondary mode-btn" data-mode="json">
+                                    <i class="fas fa-code"></i> JSON Schema
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Code Input -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h3><i class="fas fa-edit"></i> Code Input</h3>
+                        </div>
+                        <div class="card-content">
+                            <textarea id="codeInput" placeholder="Enter your code here..."></textarea>
+                            <div class="validation-controls">
+                                <button id="validateCodeBtn" class="btn btn-primary">
+                                    <i class="fas fa-check"></i> Validate
+                                </button>
+                                <button id="formatCodeBtn" class="btn btn-info">
+                                    <i class="fas fa-indent"></i> Format
+                                </button>
+                                <button id="clearCodeBtn" class="btn btn-secondary">
+                                    <i class="fas fa-eraser"></i> Clear
+                                </button>
+                                <button id="loadSampleBtn" class="btn btn-outline">
+                                    <i class="fas fa-file-import"></i> Load Sample
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Validation Results -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h3><i class="fas fa-list-alt"></i> Validation Results</h3>
+                        </div>
+                        <div class="card-content">
+                            <div id="validationResults" class="results-container">
+                                <div class="no-results">
+                                    <i class="fas fa-clipboard-check"></i>
+                                    <p>Validation results will appear here</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Test Suite -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h3><i class="fas fa-vial"></i> Test Suite</h3>
+                        </div>
+                        <div class="card-content">
+                            <div class="test-suite-controls">
+                                <button id="runTestsBtn" class="btn btn-warning">
+                                    <i class="fas fa-play"></i> Run Tests
+                                </button>
+                                <button id="runComprehensiveTestsBtn" class="btn btn-info">
+                                    <i class="fas fa-tasks"></i> Comprehensive Tests
+                                </button>
+                                <button id="clearTestsBtn" class="btn btn-secondary">
+                                    <i class="fas fa-eraser"></i> Clear Results
+                                </button>
+                            </div>
+                            <div id="testResults" class="results-container">
+                                <div class="no-results">
+                                    <i class="fas fa-vial"></i>
+                                    <p>Test results will appear here</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Templates Tab -->
+            <div class="tab-content" id="templates">
+                <div class="tab-header">
+                    <h2><i class="fas fa-layer-group"></i> Template Library & Deployment Builder</h2>
+                    <p>Build complete deployments from pre-configured templates</p>
+                </div>
+
+                <div class="templates-workspace">
+                    <!-- Template Library -->
+                    <div class="card template-library">
+                        <div class="card-header">
+                            <h3><i class="fas fa-books"></i> Available Templates</h3>
+                        </div>
+                        <div class="card-content">
+                            <div class="resource-checkboxes">
+                                <div class="resource-checkbox" data-resource="storage-account">
+                                    <input type="checkbox" id="storage-account">
+                                    <div class="checkmark">💾</div>
+                                    <div class="resource-name">Storage Account</div>
+                                </div>
+                                <div class="resource-checkbox" data-resource="web-app">
+                                    <input type="checkbox" id="web-app">
+                                    <div class="checkmark">🌐</div>
+                                    <div class="resource-name">Web App</div>
+                                </div>
+                                <div class="resource-checkbox" data-resource="virtual-machine">
+                                    <input type="checkbox" id="virtual-machine">
+                                    <div class="checkmark">🖥️</div>
+                                    <div class="resource-name">Virtual Machine</div>
+                                </div>
+                                <div class="resource-checkbox" data-resource="key-vault">
+                                    <input type="checkbox" id="key-vault">
+                                    <div class="checkmark">🔐</div>
+                                    <div class="resource-name">Key Vault</div>
+                                </div>
+                                <div class="resource-checkbox" data-resource="sql-database">
+                                    <input type="checkbox" id="sql-database">
+                                    <div class="checkmark">🗃️</div>
+                                    <div class="resource-name">SQL Database</div>
+                                </div>
+                                <div class="resource-checkbox" data-resource="app-service-plan">
+                                    <input type="checkbox" id="app-service-plan">
+                                    <div class="checkmark">📋</div>
+                                    <div class="resource-name">App Service Plan</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Deployment Builder -->
+                    <div class="card deployment-builder">
+                        <div class="card-header">
+                            <h3><i class="fas fa-tools"></i> Deployment Builder</h3>
+                        </div>
+                        <div class="card-content">
+                            <div class="deployment-options">
+                                <div class="option-group">
+                                    <h4>Deployment Settings</h4>
+                                    <div class="checkbox-option">
+                                        <input type="checkbox" id="includeParams">
+                                        <span>Include Parameter File</span>
+                                    </div>
+                                    <div class="checkbox-option">
+                                        <input type="checkbox" id="includeOutputs">
+                                        <span>Include Outputs</span>
+                                    </div>
+                                    <div class="checkbox-option">
+                                        <input type="checkbox" id="optimizedForProd">
+                                        <span>Production Optimized</span>
+                                    </div>
+                                </div>
+
+                                <div class="option-group">
+                                    <h4>Security Options</h4>
+                                    <div class="checkbox-option">
+                                        <input type="checkbox" id="enableRBAC">
+                                        <span>Enable RBAC</span>
+                                    </div>
+                                    <div class="checkbox-option">
+                                        <input type="checkbox" id="enableEncryption">
+                                        <span>Enable Encryption</span>
+                                    </div>
+                                    <div class="checkbox-option">
+                                        <input type="checkbox" id="enableMonitoring">
+                                        <span>Enable Monitoring</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="deployment-actions">
+                                <button id="generateTemplateBtn" class="btn btn-primary">
+                                    <i class="fas fa-cog"></i> Generate Template
+                                </button>
+                                <button id="previewDeploymentBtn" class="btn btn-info">
+                                    <i class="fas fa-eye"></i> Preview
+                                </button>
+                                <button id="downloadTemplateBtn" class="btn btn-success">
+                                    <i class="fas fa-download"></i> Download
+                                </button>
+                                <button id="validateTemplateBtn" class="btn btn-warning">
+                                    <i class="fas fa-check"></i> Validate
+                                </button>
+                            </div>
+
+                            <div id="deploymentPreview" class="deployment-preview" style="display: none;">
+                                <h4>Generated Template Preview</h4>
+                                <pre><code id="templatePreviewCode"></code></pre>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Test Panel (initially hidden) -->
+    <div id="testOverlay" class="test-overlay" style="display: none;">
+        <div class="test-panel">
+            <button class="close-tests" onclick="closeTestPanel()">×</button>
+            <div class="test-header">
+                <h2><i class="fas fa-vial"></i> Test Suite Results</h2>
+                <p>Comprehensive testing of all application features</p>
+            </div>
+            <div id="testConsole" class="test-results"></div>
+            <div class="test-actions">
+                <button class="btn btn-primary" onclick="runAllTests()">
+                    <i class="fas fa-redo"></i> Run Again
+                </button>
+                <button class="btn btn-secondary" onclick="closeTestPanel()">
+                    <i class="fas fa-times"></i> Close
+                </button>
+                <button class="btn btn-info" onclick="window.open('http://localhost:8081/')">
+                    <i class="fas fa-external-link-alt"></i> Open App
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="utils/azureResourceGraph.js"></script>
+    <script src="utils/schemaParser.js"></script>
+    <script src="script.js"></script>
+    <script src="test-suite.js"></script>
+    
+    <script>
+        // Show test panel on page load
+        function showTestPanel() {
+            document.getElementById('testOverlay').style.display = 'flex';
+        }
+        
+        function closeTestPanel() {
+            document.getElementById('testOverlay').style.display = 'none';
+        }
+        
+        // Override console.log to show in test panel
+        const originalLog = console.log;
+        const testConsole = document.getElementById('testConsole');
+        
+        console.log = function(...args) {
+            originalLog.apply(console, args);
+            if (testConsole) {
+                const message = args.join(' ');
+                testConsole.innerHTML += message + '\n';
+                testConsole.scrollTop = testConsole.scrollHeight;
+            }
+        };
+        
+        // Show test panel after a short delay
+        setTimeout(showTestPanel, 1000);
+    </script>
+</body>
+</html>

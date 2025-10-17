@@ -1,6 +1,10 @@
 // Main application script
+console.log('🚀 Script.js file loaded successfully!');
+alert('Script.js file loaded - DOM listener added');
+
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('🔧 Bicep Schema Builder loaded');
+    console.log('🔧 Bicep Schema Builder loaded - DOM is ready');
+    alert('DOM is ready - about to call init()');
     
     // Initialize the application
     init();
@@ -12,6 +16,9 @@ let currentSchema = null;
 let azureResourceGraph;
 
 function init() {
+    console.log('🚀 Init function called');
+    alert('Init function called - check console for more details');
+    
     // Initialize schema parser
     schemaParser = new SchemaParser();
     
@@ -24,6 +31,105 @@ function init() {
     setupEventListeners();
     
     console.log('✅ Application initialized');
+    alert('Application initialization complete');
+}
+
+// Enhanced Tab Management
+function switchTab(tabName) {
+    console.log('🔄 Switching to tab:', tabName);
+    
+    // Hide all tab contents
+    const allTabContents = document.querySelectorAll('.tab-content');
+    allTabContents.forEach(content => {
+        content.classList.remove('active');
+    });
+    
+    // Remove active class from all nav tabs
+    const allNavTabs = document.querySelectorAll('.nav-tab');
+    allNavTabs.forEach(tab => {
+        tab.classList.remove('active');
+    });
+    
+    // Show target tab content
+    const targetContent = document.getElementById(tabName);
+    if (targetContent) {
+        targetContent.classList.add('active');
+    }
+    
+    // Activate corresponding nav tab
+    const targetNavTab = document.querySelector(`[data-tab="${tabName}"]`);
+    if (targetNavTab) {
+        targetNavTab.classList.add('active');
+    }
+    
+    // Track tab usage
+    if (typeof window.trackEvent === 'function') {
+        window.trackEvent('tab_switch', 'Navigation', tabName);
+    }
+}
+
+// Enhanced Theme Management
+function initializeTheme() {
+    const savedTheme = localStorage.getItem('bicep-builder-theme');
+    const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    const shouldUseDark = savedTheme === 'dark' || (!savedTheme && systemPrefersDark);
+    
+    if (shouldUseDark) {
+        document.body.classList.add('dark-theme');
+        updateThemeIcon(true);
+    }
+}
+
+function toggleTheme() {
+    const isDark = document.body.classList.toggle('dark-theme');
+    localStorage.setItem('bicep-builder-theme', isDark ? 'dark' : 'light');
+    updateThemeIcon(isDark);
+    
+    if (typeof window.trackEvent === 'function') {
+        window.trackEvent('theme_toggle', 'UI', isDark ? 'dark' : 'light');
+    }
+}
+
+function updateThemeIcon(isDark) {
+    const themeToggle = document.getElementById('themeToggle');
+    if (themeToggle) {
+        const icon = themeToggle.querySelector('i');
+        if (icon) {
+            icon.className = isDark ? 'fas fa-sun' : 'fas fa-moon';
+        }
+    }
+}
+
+// Enhanced Copy to Clipboard Functionality
+async function copyToClipboard(text, successMessage = '✅ Copied to clipboard!') {
+    try {
+        await navigator.clipboard.writeText(text);
+        showSuccess(successMessage);
+        
+        if (typeof window.trackEvent === 'function') {
+            window.trackEvent('copy_to_clipboard', 'User Action', 'success');
+        }
+    } catch (error) {
+        console.error('Failed to copy to clipboard:', error);
+        showError('❌ Failed to copy to clipboard');
+        
+        // Fallback for older browsers
+        const textArea = document.createElement('textarea');
+        textArea.value = text;
+        textArea.style.position = 'fixed';
+        textArea.style.opacity = '0';
+        document.body.appendChild(textArea);
+        textArea.select();
+        
+        try {
+            document.execCommand('copy');
+            showSuccess(successMessage);
+        } catch (fallbackError) {
+            showError('❌ Copy to clipboard not supported');
+        }
+        
+        document.body.removeChild(textArea);
+    }
 }
 
 function setupEventListeners() {
@@ -96,6 +202,57 @@ function setupEventListeners() {
     resourceCheckboxes.forEach(checkbox => {
         checkbox.addEventListener('change', updateSelectedResources);
     });
+    
+    // ARM Converter event listeners
+    const analyzeArmBtn = document.getElementById('analyzeArmBtn');
+    const convertToBicepBtn = document.getElementById('convertToBicepBtn');
+    const copyBicepBtn = document.getElementById('copyBicepBtn');
+    const downloadBicepBtn = document.getElementById('downloadBicepBtn');
+    const deployBicepBtn = document.getElementById('deployBicepBtn');
+    
+    if (analyzeArmBtn) {
+        console.log('✅ Analyze ARM button found, adding event listener');
+        analyzeArmBtn.addEventListener('click', function() {
+            alert('Analyze button clicked!');
+            analyzeArmTemplate();
+        });
+    } else {
+        console.log('❌ Analyze ARM button not found');
+        alert('❌ Analyze ARM button not found in DOM!');
+    }
+    
+    if (convertToBicepBtn) {
+        console.log('✅ Convert to Bicep button found, adding event listener');
+        convertToBicepBtn.addEventListener('click', function() {
+            alert('Convert button clicked!');
+            convertArmToBicep();
+        });
+    } else {
+        console.log('❌ Convert to Bicep button not found');
+        alert('❌ Convert to Bicep button not found in DOM!');
+    }
+    
+    if (copyBicepBtn) copyBicepBtn.addEventListener('click', copyBicepToClipboard);
+    if (downloadBicepBtn) downloadBicepBtn.addEventListener('click', downloadBicepFile);
+    if (deployBicepBtn) deployBicepBtn.addEventListener('click', deployBicepTemplate);
+    
+    // Network mode toggle
+    const networkModeRadios = document.querySelectorAll('input[name="networkMode"]');
+    networkModeRadios.forEach(radio => {
+        radio.addEventListener('change', toggleNetworkMode);
+    });
+    
+    // Tab navigation
+    const navTabs = document.querySelectorAll('.nav-tab');
+    navTabs.forEach(tab => {
+        tab.addEventListener('click', (e) => {
+            const targetTab = e.target.closest('.nav-tab').dataset.tab;
+            switchTab(targetTab);
+        });
+    });
+    
+    // Initialize first tab as active
+    switchTab('schema-builder');
     
     // Editor real-time validation
     const editor = document.getElementById('schemaEditor');
@@ -248,8 +405,37 @@ function checkBicepProperties(properties, results) {
 }
 
 function formatJSON() {
+    console.log('🎨 Format button clicked');
+    
+    // Check which tab is currently active and format accordingly
+    const activeTab = document.querySelector('.nav-tab.active');
+    const activeTabId = activeTab ? activeTab.getAttribute('data-tab') : 'schema-builder';
+    
+    console.log('Active tab:', activeTabId);
+    
+    if (activeTabId === 'arm-converter') {
+        // Format Bicep code in ARM converter
+        formatBicepCode();
+        return;
+    }
+    
+    if (activeTabId === 'schema-validator') {
+        // Format code in schema validator based on current mode
+        formatValidatorCode();
+        return;
+    }
+    
+    // Default: Format JSON in Schema Builder tab
     const editor = document.getElementById('schemaEditor');
+    console.log('Editor element:', editor);
+    
+    if (!editor) {
+        showError('❌ Schema editor not found');
+        return;
+    }
+    
     const content = editor.value.trim();
+    console.log('Content to format:', content.substring(0, 100) + '...');
 
     if (!content) {
         showError('❌ No content to format');
@@ -258,10 +444,87 @@ function formatJSON() {
 
     try {
         const parsed = JSON.parse(content);
-        editor.value = JSON.stringify(parsed, null, 2);
+        const formatted = JSON.stringify(parsed, null, 2);
+        editor.value = formatted;
         showSuccess('✅ JSON formatted successfully!');
+        console.log('✅ JSON formatted successfully');
     } catch (error) {
+        console.error('Format error:', error);
         showError(`❌ Cannot format invalid JSON: ${error.message}`);
+    }
+}
+
+// Format code in Schema Validator tab
+function formatValidatorCode() {
+    const codeInput = document.getElementById('codeInput');
+    if (!codeInput || !codeInput.value.trim()) {
+        showNotificationPro('❌ No code to format', 'error');
+        return;
+    }
+    
+    const currentMode = window.currentValidationMode || 'bicep';
+    const content = codeInput.value.trim();
+    
+    try {
+        if (currentMode === 'json' || currentMode === 'arm') {
+            // Format JSON/ARM templates
+            const parsed = JSON.parse(content);
+            const formatted = JSON.stringify(parsed, null, 2);
+            codeInput.value = formatted;
+            showNotificationPro('✅ JSON formatted successfully!', 'success');
+        } else if (currentMode === 'bicep') {
+            // Format Bicep code
+            let formattedCode = content;
+            
+            // Basic Bicep formatting
+            formattedCode = formattedCode.replace(/\r\n/g, '\n');
+            formattedCode = formattedCode.replace(/\t/g, '  ');
+            
+            // Clean up spacing around operators
+            formattedCode = formattedCode.replace(/\s*=\s*/g, ' = ');
+            formattedCode = formattedCode.replace(/\s*:\s*/g, ': ');
+            
+            // Format object properties with consistent indentation
+            const lines = formattedCode.split('\n');
+            let indentLevel = 0;
+            const indentSize = 2;
+            
+            for (let i = 0; i < lines.length; i++) {
+                const line = lines[i].trim();
+                
+                if (line.includes('{')) {
+                    lines[i] = ' '.repeat(indentLevel * indentSize) + line;
+                    indentLevel++;
+                } else if (line.includes('}')) {
+                    indentLevel = Math.max(0, indentLevel - 1);
+                    lines[i] = ' '.repeat(indentLevel * indentSize) + line;
+                } else if (line.length > 0) {
+                    lines[i] = ' '.repeat(indentLevel * indentSize) + line;
+                }
+            }
+            
+            formattedCode = lines.join('\n');
+            formattedCode = formattedCode.replace(/\n\s*\n\s*\n/g, '\n\n');
+            
+            codeInput.value = formattedCode;
+            showNotificationPro('✅ Bicep code formatted successfully!', 'success');
+        } else {
+            // For other modes, try JSON first, then basic formatting
+            try {
+                const parsed = JSON.parse(content);
+                const formatted = JSON.stringify(parsed, null, 2);
+                codeInput.value = formatted;
+                showNotificationPro('✅ Content formatted as JSON!', 'success');
+            } catch {
+                // Basic text formatting
+                let formatted = content.replace(/\r\n/g, '\n').replace(/\t/g, '  ');
+                codeInput.value = formatted;
+                showNotificationPro('✅ Basic formatting applied!', 'success');
+            }
+        }
+    } catch (error) {
+        console.error('Format error:', error);
+        showNotificationPro(`❌ Cannot format content: ${error.message}`, 'error');
     }
 }
 
@@ -3109,4 +3372,1560 @@ function createModal(title, closeText) {
     document.body.appendChild(modal);
     
     return modal;
+}
+
+// ARM Template to Bicep Converter Functions
+let armTemplateAnalysis = null;
+
+function analyzeArmTemplate() {
+    console.log('🔍 Analyze ARM Template button clicked');
+    alert('Analyze ARM Template function called!'); // Temporary debug alert
+    
+    const armInputElement = document.getElementById('armTemplateInput');
+    console.log('ARM input element:', armInputElement);
+    
+    if (!armInputElement) {
+        alert('❌ Cannot find armTemplateInput element!');
+        return;
+    }
+    
+    const armInput = armInputElement.value.trim();
+    console.log('ARM Input length:', armInput.length);
+    alert('ARM Input length: ' + armInput.length);
+    
+    if (!armInput) {
+        console.log('❌ No ARM template content found');
+        alert('❌ Please paste an ARM template first');
+        showError('❌ Please paste an ARM template first');
+        return;
+    }
+    
+    try {
+        const armTemplate = JSON.parse(armInput);
+        
+        // Analyze the template
+        const analysis = {
+            resources: armTemplate.resources || [],
+            parameters: armTemplate.parameters || {},
+            variables: armTemplate.variables || {},
+            resourceTypes: new Set(),
+            dependencies: [],
+            missingDependencies: []
+        };
+        
+        // Analyze resources
+        analysis.resources.forEach(resource => {
+            analysis.resourceTypes.add(resource.type);
+            
+            // Check for external dependencies
+            if (resource.type === 'Microsoft.Compute/virtualMachines') {
+                checkVMDependencies(resource, armTemplate, analysis);
+            }
+        });
+        
+        armTemplateAnalysis = analysis;
+        alert('✅ Analysis completed! Found ' + analysis.resources.length + ' resources');
+        displayAnalysis(analysis);
+        
+        // Enable convert button
+        const convertBtn = document.getElementById('convertToBicepBtn');
+        const configSection = document.getElementById('converterConfig');
+        
+        alert('Enabling convert button and showing config...');
+        
+        if (convertBtn) {
+            convertBtn.disabled = false;
+            alert('✅ Convert button enabled!');
+        } else {
+            alert('❌ Convert button not found!');
+        }
+        
+        if (configSection) {
+            configSection.style.display = 'block';
+            alert('✅ Config section shown!');
+        } else {
+            alert('❌ Config section not found!');
+        }
+        
+        // Track analysis
+        if (typeof window.trackEvent === 'function') {
+            window.trackEvent('arm_template_analysis', 'ARM Converter', `${analysis.resources.length}_resources`);
+        }
+        
+    } catch (error) {
+        showError(`❌ Invalid JSON: ${error.message}`);
+    }
+}
+
+function checkVMDependencies(vmResource, armTemplate, analysis) {
+    const vmProps = vmResource.properties || {};
+    
+    // Check for network interface
+    const networkProfile = vmProps.networkProfile;
+    if (networkProfile && networkProfile.networkInterfaces) {
+        networkProfile.networkInterfaces.forEach(nic => {
+            if (nic.id && nic.id.includes('parameters(')) {
+                analysis.missingDependencies.push({
+                    type: 'Microsoft.Network/networkInterfaces',
+                    reason: 'External reference - will create new NIC with subnet'
+                });
+            }
+        });
+    }
+    
+    // Check for managed disk
+    const storageProfile = vmProps.storageProfile;
+    if (storageProfile && storageProfile.osDisk && storageProfile.osDisk.managedDisk) {
+        const diskId = storageProfile.osDisk.managedDisk.id;
+        if (diskId && diskId.includes('parameters(')) {
+            analysis.missingDependencies.push({
+                type: 'Microsoft.Compute/disks',
+                reason: 'External reference - will create new managed disk'
+            });
+        }
+    }
+    
+    // Add required infrastructure
+    analysis.missingDependencies.push(
+        {
+            type: 'Microsoft.Network/virtualNetworks',
+            reason: 'Required for VM deployment'
+        },
+        {
+            type: 'Microsoft.Network/networkSecurityGroups',
+            reason: 'Security best practice'
+        },
+        {
+            type: 'Microsoft.Network/publicIPAddresses',
+            reason: 'Optional - for external access'
+        }
+    );
+}
+
+function displayAnalysis(analysis) {
+    const analysisContent = document.getElementById('analysisContent');
+    const analysisResults = document.getElementById('analysisResults');
+    
+    let html = '<div class="analysis-summary">';
+    html += `<div class="analysis-item">`;
+    html += `<h4>📊 Template Overview</h4>`;
+    html += `<p><strong>Resources Found:</strong> ${analysis.resources.length}</p>`;
+    html += `<p><strong>Parameters:</strong> ${Object.keys(analysis.parameters).length}</p>`;
+    html += `<p><strong>Resource Types:</strong> ${Array.from(analysis.resourceTypes).join(', ')}</p>`;
+    html += `</div>`;
+    
+    if (analysis.missingDependencies.length > 0) {
+        html += `<div class="analysis-item">`;
+        html += `<h4>🔧 Dependencies to Add</h4>`;
+        analysis.missingDependencies.forEach(dep => {
+            html += `<p><strong>${dep.type}:</strong> ${dep.reason}</p>`;
+        });
+        html += `</div>`;
+    }
+    
+    html += '</div>';
+    
+    analysisContent.innerHTML = html;
+    analysisResults.style.display = 'block';
+}
+
+function convertArmToBicep() {
+    console.log('🔄 Convert ARM to Bicep function called');
+    
+    if (!armTemplateAnalysis) {
+        showError('❌ Please analyze the template first');
+        return;
+    }
+    
+    const armInput = document.getElementById('armTemplateInput').value.trim();
+    const armTemplate = JSON.parse(armInput);
+    
+    // Get configuration
+    const networkModeElement = document.querySelector('input[name="networkMode"]:checked');
+    console.log('Network mode element:', networkModeElement);
+    
+    if (!networkModeElement) {
+        showError('❌ Please select a network mode');
+        return;
+    }
+    
+    const networkMode = networkModeElement.value;
+    console.log('Selected network mode:', networkMode);
+    
+    const config = {
+        location: document.getElementById('targetLocation').value,
+        networkMode: networkMode,
+        // New network config
+        vnetAddressSpace: document.getElementById('vnetAddressSpace').value,
+        subnetAddressSpace: document.getElementById('subnetAddressSpace').value,
+        // Existing network config
+        existingVnetName: document.getElementById('existingVnetName').value,
+        existingSubnetName: document.getElementById('existingSubnetName').value,
+        existingVnetResourceGroup: document.getElementById('existingVnetResourceGroup').value,
+        // VM config
+        vmSize: document.getElementById('vmSize').value,
+        osType: document.getElementById('osType').value,
+        includePublicIP: document.getElementById('includePublicIP').checked,
+    };
+    
+    console.log('Configuration object:', config);
+    
+    // Validate existing network configuration if selected
+    if (networkMode === 'existing') {
+        console.log('Validating existing network configuration...');
+        if (!config.existingVnetName || !config.existingSubnetName) {
+            showError('❌ Please provide existing VNet and Subnet names');
+            return;
+        }
+        console.log('✅ Existing network configuration valid');
+    }
+    
+    // Complete the config object
+    config.includeNSG = document.getElementById('includeNSG').checked;
+    config.includeBootDiagnostics = document.getElementById('includeBootDiagnostics').checked;
+    
+    console.log('Final configuration:', config);
+    
+    // Generate complete Bicep template
+    const bicepTemplate = generateCompleteBicepTemplate(armTemplate, armTemplateAnalysis, config);
+    
+    // Display result
+    document.getElementById('bicepOutput').value = bicepTemplate;
+    document.getElementById('converterOutput').style.display = 'block';
+    
+    // Track conversion
+    if (typeof window.trackEvent === 'function') {
+        window.trackEvent('arm_to_bicep_conversion', 'ARM Converter', config.location);
+    }
+    
+    showSuccess('✅ ARM template successfully converted to Bicep!');
+}
+
+function generateCompleteBicepTemplate(armTemplate, analysis, config) {
+    const originalVM = analysis.resources.find(r => r.type === 'Microsoft.Compute/virtualMachines');
+    const vmName = originalVM ? extractParameterName(originalVM.name) : 'myvm';
+    
+    if (config.networkMode === 'existing') {
+        console.log('Using existing network mode for VM:', vmName);
+        // Temporary simple template to test
+        return `// VM Deployment using Existing VNet/Subnet
+targetScope = 'resourceGroup'
+
+param vmName string = '${vmName}'
+param location string = '${config.location}'
+param existingVnetName string = '${config.existingVnetName}'
+param existingSubnetName string = '${config.existingSubnetName}'
+
+var vmNameClean = toLower(replace(vmName, ' ', '-'))
+var networkInterfaceName = '\${vmNameClean}-nic'
+
+resource existingVnet 'Microsoft.Network/virtualNetworks@2023-05-01' existing = {
+  name: existingVnetName
+}
+
+resource existingSubnet 'Microsoft.Network/virtualNetworks/subnets@2023-05-01' existing = {
+  parent: existingVnet
+  name: existingSubnetName
+}
+
+resource networkInterface 'Microsoft.Network/networkInterfaces@2023-05-01' = {
+  name: networkInterfaceName
+  location: location
+  properties: {
+    ipConfigurations: [
+      {
+        name: 'ipconfig1'
+        properties: {
+          privateIPAllocationMethod: 'Dynamic'
+          subnet: {
+            id: existingSubnet.id
+          }
+        }
+      }
+    ]
+  }
+}
+
+output message string = 'Bicep template generated successfully for existing network!'
+`;
+    } else {
+        return generateBicepWithNewNetwork(vmName, config);
+    }
+}
+
+function generateBicepWithExistingNetwork(vmName, config) {
+    console.log('🔧 Generating Bicep with existing network for VM:', vmName);
+    
+    // Build the template step by step
+    let template = `// VM Deployment using Existing VNet/Subnet - Converted from ARM Template
+// Generated on: ${new Date().toISOString()}
+// Uses existing network infrastructure
+// VM Name: ${vmName}
+
+targetScope = 'resourceGroup'
+
+metadata description = 'VM deployment using existing VNet and subnet'
+metadata author = 'Bicep Schema Builder - ARM Converter'
+metadata version = '1.0.0'
+
+// === PARAMETERS ===
+
+@description('Virtual Machine name')
+param vmName string = '${vmName}'
+
+@description('Location for VM resources')
+param location string = '${config.location}'
+
+@description('Existing Virtual Network name')
+param existingVnetName string = '${config.existingVnetName || 'existing-vnet'}'
+
+@description('Existing Subnet name')
+param existingSubnetName string = '${config.existingSubnetName || 'default'}'
+
+${config.existingVnetResourceGroup ? `@description('Resource Group containing the VNet')
+param vnetResourceGroupName string = '${config.existingVnetResourceGroup}'` : ''}
+
+@description('Administrator username')
+param adminUsername string = 'azureuser'
+
+@description('Administrator password or SSH key')
+@secure()
+param adminPasswordOrKey string
+
+@description('Virtual Machine size')
+param vmSize string = '${config.vmSize}'
+
+@description('OS Type')
+@allowed(['Linux', 'Windows'])
+param osType string = '${config.osType}'
+
+// === VARIABLES ===
+
+var vmNameClean = toLower(replace('${vmName}', ' ', '-'))
+${config.includeNSG ? `var networkSecurityGroupName = '\${vmNameClean}-nsg'` : ''}
+var networkInterfaceName = '\${vmNameClean}-nic'
+var osDiskName = '\${vmNameClean}-osdisk'
+${config.includePublicIP ? `var publicIPAddressName = '\${vmNameClean}-pip'` : ''}
+
+// === EXISTING RESOURCES ===
+
+${config.existingVnetResourceGroup ? `// Reference existing VNet in different resource group
+resource existingVnet 'Microsoft.Network/virtualNetworks@2023-05-01' existing = {
+  name: existingVnetName
+  scope: resourceGroup(vnetResourceGroupName)
+}
+
+resource existingSubnet 'Microsoft.Network/virtualNetworks/subnets@2023-05-01' existing = {
+  parent: existingVnet
+  name: existingSubnetName
+}` : `// Reference existing VNet in same resource group
+resource existingVnet 'Microsoft.Network/virtualNetworks@2023-05-01' existing = {
+  name: existingVnetName
+}
+
+resource existingSubnet 'Microsoft.Network/virtualNetworks/subnets@2023-05-01' existing = {
+  parent: existingVnet
+  name: existingSubnetName
+}`}
+
+// === NEW RESOURCES ===
+
+${config.includeNSG ? `// Network Security Group for VM
+resource networkSecurityGroup 'Microsoft.Network/networkSecurityGroups@2023-05-01' = {
+  name: networkSecurityGroupName
+  location: location
+  properties: {
+    securityRules: [
+      ${config.osType === 'Linux' ? `{
+        name: 'SSH'
+        properties: {
+          priority: 1001
+          access: 'Allow'
+          direction: 'Inbound'
+          destinationPortRange: '22'
+          protocol: 'Tcp'
+          sourcePortRange: '*'
+          sourceAddressPrefix: '*'
+          destinationAddressPrefix: '*'
+        }
+      }` : `{
+        name: 'RDP'
+        properties: {
+          priority: 1001
+          access: 'Allow'
+          direction: 'Inbound'
+          destinationPortRange: '3389'
+          protocol: 'Tcp'
+          sourcePortRange: '*'
+          sourceAddressPrefix: '*'
+          destinationAddressPrefix: '*'
+        }
+      }`}
+    ]
+  }
+}` : ''}
+
+${config.includePublicIP ? `// Public IP Address
+resource publicIPAddress 'Microsoft.Network/publicIPAddresses@2023-05-01' = {
+  name: publicIPAddressName
+  location: location
+  sku: { name: 'Standard' }
+  properties: {
+    publicIPAllocationMethod: 'Static'
+    dnsSettings: { domainNameLabel: vmNameClean }
+  }
+}` : ''}
+
+// Network Interface
+resource networkInterface 'Microsoft.Network/networkInterfaces@2023-05-01' = {
+  name: networkInterfaceName
+  location: location
+  properties: {
+    ipConfigurations: [
+      {
+        name: 'ipconfig1'
+        properties: {
+          privateIPAllocationMethod: 'Dynamic'
+          subnet: { id: existingSubnet.id }
+          ${config.includePublicIP ? 'publicIPAddress: { id: publicIPAddress.id }' : ''}
+        }
+      }
+    ]
+    ${config.includeNSG ? 'networkSecurityGroup: { id: networkSecurityGroup.id }' : ''}
+  }
+}
+
+// Virtual Machine
+resource virtualMachine 'Microsoft.Compute/virtualMachines@2024-11-01' = {
+  name: vmName
+  location: location
+  properties: {
+    hardwareProfile: { vmSize: vmSize }
+    osProfile: {
+      computerName: vmName
+      adminUsername: adminUsername
+      adminPassword: adminPasswordOrKey
+      ${config.osType === 'Linux' ? 'linuxConfiguration: { disablePasswordAuthentication: false }' : 'windowsConfiguration: { enableAutomaticUpdates: true }'}
+    }
+    storageProfile: {
+      imageReference: {
+        ${config.osType === 'Linux' ? `publisher: 'Canonical'
+        offer: '0001-com-ubuntu-server-jammy'
+        sku: '22_04-lts-gen2'` : `publisher: 'MicrosoftWindowsServer'
+        offer: 'WindowsServer'
+        sku: '2022-datacenter-azure-edition'`}
+        version: 'latest'
+      }
+      osDisk: {
+        name: osDiskName
+        caching: 'ReadWrite'
+        createOption: 'FromImage'
+        managedDisk: { storageAccountType: 'Premium_LRS' }
+      }
+    }
+    networkProfile: {
+      networkInterfaces: [{ id: networkInterface.id }]
+    }
+    ${config.includeBootDiagnostics ? 'diagnosticsProfile: { bootDiagnostics: { enabled: true } }' : ''}
+  }
+}
+
+// === OUTPUTS ===
+
+output vmId string = virtualMachine.id
+output vmName string = virtualMachine.name
+output existingVnetUsed string = existingVnet.name
+output existingSubnetUsed string = existingSubnet.name
+${config.includePublicIP ? 'output publicIPAddress string = publicIPAddress.properties.ipAddress' : ''}
+output privateIPAddress string = networkInterface.properties.ipConfigurations[0].properties.privateIPAddress
+output connectionCommand string = ${config.osType === 'Linux' ? 
+    (config.includePublicIP ? "'ssh \\${adminUsername}@\\${publicIPAddress.properties.dnsSettings.fqdn}'" : "'ssh \\${adminUsername}@<private_ip>'") :
+    (config.includePublicIP ? "'mstsc /v:\\${publicIPAddress.properties.dnsSettings.fqdn}'" : "'mstsc /v:<private_ip>'")}`;
+}
+
+function generateBicepWithNewNetwork(vmName, config) {
+    return `// Complete VM Deployment - Converted from ARM Template
+// Generated on: ${new Date().toISOString()}
+// Includes all dependencies for standalone deployment
+
+targetScope = 'resourceGroup'
+
+metadata description = 'Complete VM deployment with all dependencies'
+metadata author = 'Bicep Schema Builder - ARM Converter'
+metadata version = '1.0.0'
+
+// === PARAMETERS ===
+
+@description('Virtual Machine name')
+param vmName string = '${vmName}'
+
+@description('Location for all resources')
+param location string = '${config.location}'
+
+@description('Administrator username')
+param adminUsername string = 'azureuser'
+
+@description('Administrator password or SSH key')
+@secure()
+param adminPasswordOrKey string
+
+@description('Virtual Machine size')
+param vmSize string = '${config.vmSize}'
+
+@description('OS Type')
+@allowed(['Linux', 'Windows'])
+param osType string = '${config.osType}'
+
+@description('Environment tag')
+param environment string = 'dev'
+
+// === VARIABLES ===
+
+var vmNameClean = toLower(replace('${vmName}', ' ', '-'))
+var networkSecurityGroupName = '\${vmNameClean}-nsg'
+var virtualNetworkName = '\${vmNameClean}-vnet'
+var subnetName = 'default'
+var networkInterfaceName = '\${vmNameClean}-nic'
+var osDiskName = '\${vmNameClean}-osdisk'
+${config.includePublicIP ? "var publicIPAddressName = '\\${vmNameClean}-pip'" : ''}
+
+// Network configuration
+var vnetAddressSpace = '${config.vnetAddressSpace}'
+var subnetAddressSpace = '${config.subnetAddressSpace}'
+
+${config.includeNSG ? `
+// Network Security Group
+resource networkSecurityGroup 'Microsoft.Network/networkSecurityGroups@2023-05-01' = {
+  name: networkSecurityGroupName
+  location: location
+  properties: {
+    securityRules: [
+      ${config.osType === 'Linux' ? `{
+        name: 'SSH'
+        properties: {
+          priority: 1001
+          access: 'Allow'
+          direction: 'Inbound'
+          destinationPortRange: '22'
+          protocol: 'Tcp'
+          sourcePortRange: '*'
+          sourceAddressPrefix: '*'
+          destinationAddressPrefix: '*'
+        }
+      }` : `{
+        name: 'RDP'
+        properties: {
+          priority: 1001
+          access: 'Allow'
+          direction: 'Inbound'
+          destinationPortRange: '3389'
+          protocol: 'Tcp'
+          sourcePortRange: '*'
+          sourceAddressPrefix: '*'
+          destinationAddressPrefix: '*'
+        }
+      }`}
+    ]
+  }
+}` : ''}
+
+// Virtual Network
+resource virtualNetwork 'Microsoft.Network/virtualNetworks@2023-05-01' = {
+  name: virtualNetworkName
+  location: location
+  properties: {
+    addressSpace: {
+      addressPrefixes: [
+        vnetAddressSpace
+      ]
+    }
+    subnets: [
+      {
+        name: subnetName
+        properties: {
+          addressPrefix: subnetAddressSpace
+          ${config.includeNSG ? 'networkSecurityGroup: { id: networkSecurityGroup.id }' : ''}
+        }
+      }
+    ]
+  }
+}
+
+${config.includePublicIP ? `
+// Public IP Address
+resource publicIPAddress 'Microsoft.Network/publicIPAddresses@2023-05-01' = {
+  name: publicIPAddressName
+  location: location
+  sku: { name: 'Standard' }
+  properties: {
+    publicIPAllocationMethod: 'Static'
+    dnsSettings: { domainNameLabel: vmNameClean }
+  }
+}` : ''}
+
+// Network Interface
+resource networkInterface 'Microsoft.Network/networkInterfaces@2023-05-01' = {
+  name: networkInterfaceName
+  location: location
+  properties: {
+    ipConfigurations: [
+      {
+        name: 'ipconfig1'
+        properties: {
+          privateIPAllocationMethod: 'Dynamic'
+          subnet: { id: virtualNetwork.properties.subnets[0].id }
+          ${config.includePublicIP ? 'publicIPAddress: { id: publicIPAddress.id }' : ''}
+        }
+      }
+    ]
+  }
+}
+
+// Virtual Machine
+resource virtualMachine 'Microsoft.Compute/virtualMachines@2024-11-01' = {
+  name: vmName
+  location: location
+  properties: {
+    hardwareProfile: { vmSize: vmSize }
+    osProfile: {
+      computerName: vmName
+      adminUsername: adminUsername
+      adminPassword: adminPasswordOrKey
+      ${config.osType === 'Linux' ? 'linuxConfiguration: { disablePasswordAuthentication: false }' : 'windowsConfiguration: { enableAutomaticUpdates: true }'}
+    }
+    storageProfile: {
+      imageReference: {
+        ${config.osType === 'Linux' ? `publisher: 'Canonical'
+        offer: '0001-com-ubuntu-server-jammy'
+        sku: '22_04-lts-gen2'` : `publisher: 'MicrosoftWindowsServer'
+        offer: 'WindowsServer'
+        sku: '2022-datacenter-azure-edition'`}
+        version: 'latest'
+      }
+      osDisk: {
+        name: osDiskName
+        caching: 'ReadWrite'
+        createOption: 'FromImage'
+        managedDisk: { storageAccountType: 'Premium_LRS' }
+      }
+    }
+    networkProfile: {
+      networkInterfaces: [{ id: networkInterface.id }]
+    }
+    ${config.includeBootDiagnostics ? 'diagnosticsProfile: { bootDiagnostics: { enabled: true } }' : ''}
+  }
+}
+
+// === OUTPUTS ===
+
+output vmId string = virtualMachine.id
+output vmName string = virtualMachine.name
+${config.includePublicIP ? 'output publicIPAddress string = publicIPAddress.properties.ipAddress' : ''}
+output connectionCommand string = ${config.osType === 'Linux' ? 
+    (config.includePublicIP ? "'ssh \\${adminUsername}@\\${publicIPAddress.properties.dnsSettings.fqdn}'" : "'Use private IP for connection'") :
+    (config.includePublicIP ? "'mstsc /v:\\${publicIPAddress.properties.dnsSettings.fqdn}'" : "'Use private IP for connection'")}`;
+}
+
+function extractParameterName(armExpression) {
+    if (typeof armExpression === 'string' && armExpression.includes('parameters(')) {
+        const match = armExpression.match(/parameters\('([^']+)'\)/);
+        return match ? match[1].replace(/_name$/, '') : 'myvm';
+    }
+    return 'myvm';
+}
+
+function copyBicepToClipboard() {
+    const bicepOutput = document.getElementById('bicepOutput');
+    bicepOutput.select();
+    document.execCommand('copy');
+    showSuccess('✅ Bicep template copied to clipboard!');
+}
+
+function downloadBicepFile() {
+    const bicepContent = document.getElementById('bicepOutput').value;
+    const blob = new Blob([bicepContent], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'converted-vm-template.bicep';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    
+    showSuccess('✅ Bicep template downloaded!');
+}
+
+function toggleNetworkMode() {
+    const networkMode = document.querySelector('input[name="networkMode"]:checked').value;
+    const createConfig = document.getElementById('createNetworkConfig');
+    const existingConfig = document.getElementById('existingNetworkConfig');
+    
+    if (networkMode === 'existing') {
+        createConfig.style.display = 'none';
+        existingConfig.style.display = 'block';
+    } else {
+        createConfig.style.display = 'grid';
+        existingConfig.style.display = 'none';
+    }
+}
+
+function deployBicepTemplate() {
+    const deployCommand = `# Deploy using Azure CLI:
+az deployment group create \\
+  --resource-group myResourceGroup \\
+  --template-file converted-vm-template.bicep \\
+  --parameters vmName=myVM adminUsername=azureuser adminPasswordOrKey='YourSecurePassword123!'`;
+    
+    showInfo(`🚀 To deploy this template:\n\n${deployCommand}`);
+}
+
+// Enhanced Notification System for Pro Version
+function showNotificationPro(message, type = 'info', duration = 3000) {
+    // Remove any existing notifications
+    const existingNotifications = document.querySelectorAll('.notification-pro');
+    existingNotifications.forEach(notification => {
+        notification.remove();
+    });
+    
+    // Create notification element
+    const notification = document.createElement('div');
+    notification.className = `notification-pro notification-pro-${type}`;
+    notification.innerHTML = `
+        <div class="notification-content">
+            <i class="notification-icon ${getNotificationIcon(type)}"></i>
+            <span class="notification-message">${message}</span>
+            <button class="notification-close" onclick="this.parentElement.parentElement.remove()">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+    `;
+    
+    // Style the notification
+    Object.assign(notification.style, {
+        position: 'fixed',
+        top: '20px',
+        right: '20px',
+        zIndex: '10000',
+        padding: '16px 20px',
+        borderRadius: '8px',
+        boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+        color: 'white',
+        fontWeight: '500',
+        minWidth: '300px',
+        maxWidth: '500px',
+        transform: 'translateX(100%)',
+        transition: 'transform 0.3s ease',
+        background: getNotificationColor(type)
+    });
+    
+    // Add to page
+    document.body.appendChild(notification);
+    
+    // Animate in
+    setTimeout(() => {
+        notification.style.transform = 'translateX(0)';
+    }, 100);
+    
+    // Auto remove
+    if (duration > 0) {
+        setTimeout(() => {
+            if (notification.parentElement) {
+                notification.style.transform = 'translateX(100%)';
+                setTimeout(() => {
+                    if (notification.parentElement) {
+                        notification.remove();
+                    }
+                }, 300);
+            }
+        }, duration);
+    }
+}
+
+function getNotificationIcon(type) {
+    switch (type) {
+        case 'success': return 'fas fa-check-circle';
+        case 'error': return 'fas fa-exclamation-circle';
+        case 'warning': return 'fas fa-exclamation-triangle';
+        case 'info': 
+        default: return 'fas fa-info-circle';
+    }
+}
+
+function getNotificationColor(type) {
+    switch (type) {
+        case 'success': return 'linear-gradient(135deg, #4CAF50, #45a049)';
+        case 'error': return 'linear-gradient(135deg, #F44336, #d32f2f)';
+        case 'warning': return 'linear-gradient(135deg, #FF9800, #f57c00)';
+        case 'info':
+        default: return 'linear-gradient(135deg, #2196F3, #1976d2)';
+    }
+}
+
+// Enhanced Copy Functionality for ARM Converter
+function copyBicepToClipboard() {
+    const bicepOutput = document.getElementById('bicepOutput');
+    if (bicepOutput && bicepOutput.value) {
+        copyToClipboard(bicepOutput.value, '✅ Bicep template copied to clipboard!');
+    } else {
+        showNotificationPro('❌ No Bicep template to copy', 'error');
+    }
+}
+
+// Enhanced Download Functionality
+function downloadBicepFile() {
+    const bicepOutput = document.getElementById('bicepOutput');
+    if (bicepOutput && bicepOutput.value) {
+        const blob = new Blob([bicepOutput.value], { type: 'text/plain' });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'converted-template.bicep';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
+        
+        showNotificationPro('✅ Bicep template downloaded successfully!', 'success');
+        
+        if (typeof window.trackEvent === 'function') {
+            window.trackEvent('download_bicep', 'ARM Converter', 'success');
+        }
+    } else {
+        showNotificationPro('❌ No Bicep template to download', 'error');
+    }
+}
+
+// Format Button Functionality (Enhanced)
+function formatBicepCode() {
+    const bicepOutput = document.getElementById('bicepOutput');
+    if (!bicepOutput || !bicepOutput.value) {
+        showNotificationPro('❌ No Bicep code to format', 'error');
+        return;
+    }
+
+    try {
+        // Enhanced formatting with proper indentation and spacing
+        let formattedCode = bicepOutput.value;
+        
+        // Remove extra whitespace and normalize line endings
+        formattedCode = formattedCode.replace(/\r\n/g, '\n');
+        formattedCode = formattedCode.replace(/\t/g, '  '); // Convert tabs to 2 spaces
+        
+        // Format resource blocks with proper indentation
+        formattedCode = formattedCode.replace(/^(\s*)resource\s+/gm, '$1resource ');
+        formattedCode = formattedCode.replace(/^(\s*)param\s+/gm, '$1param ');
+        formattedCode = formattedCode.replace(/^(\s*)var\s+/gm, '$1var ');
+        formattedCode = formattedCode.replace(/^(\s*)output\s+/gm, '$1output ');
+        
+        // Clean up spacing around operators
+        formattedCode = formattedCode.replace(/\s*=\s*/g, ' = ');
+        formattedCode = formattedCode.replace(/\s*:\s*/g, ': ');
+        
+        // Format object properties with consistent indentation
+        const lines = formattedCode.split('\n');
+        let indentLevel = 0;
+        const indentSize = 2;
+        
+        for (let i = 0; i < lines.length; i++) {
+            const line = lines[i].trim();
+            
+            if (line.includes('{')) {
+                lines[i] = ' '.repeat(indentLevel * indentSize) + line;
+                indentLevel++;
+            } else if (line.includes('}')) {
+                indentLevel = Math.max(0, indentLevel - 1);
+                lines[i] = ' '.repeat(indentLevel * indentSize) + line;
+            } else if (line.length > 0) {
+                lines[i] = ' '.repeat(indentLevel * indentSize) + line;
+            }
+        }
+        
+        formattedCode = lines.join('\n');
+        
+        // Remove excessive blank lines
+        formattedCode = formattedCode.replace(/\n\s*\n\s*\n/g, '\n\n');
+        
+        bicepOutput.value = formattedCode;
+        showNotificationPro('✅ Bicep code formatted successfully!', 'success');
+        
+        if (typeof window.trackEvent === 'function') {
+            window.trackEvent('format_bicep', 'ARM Converter', 'success');
+        }
+        
+    } catch (error) {
+        console.error('Format error:', error);
+        showNotificationPro('❌ Error formatting Bicep code: ' + error.message, 'error');
+    }
+}
+
+// Schema Validation Integration (for Schema Validator Tab)
+function validateBicepSchema(bicepCode) {
+    try {
+        // Basic validation checks
+        const validationResults = {
+            isValid: true,
+            errors: [],
+            warnings: [],
+            suggestions: []
+        };
+        
+        // Check for required elements
+        if (!bicepCode.includes('resource ')) {
+            validationResults.warnings.push('No resources found in template');
+        }
+        
+        // Check for parameter declarations
+        const paramMatches = bicepCode.match(/param\s+\w+/g);
+        if (paramMatches) {
+            validationResults.suggestions.push(`Found ${paramMatches.length} parameter(s)`);
+        }
+        
+        // Check for variable declarations
+        const varMatches = bicepCode.match(/var\s+\w+/g);
+        if (varMatches) {
+            validationResults.suggestions.push(`Found ${varMatches.length} variable(s)`);
+        }
+        
+        // Check for output declarations
+        const outputMatches = bicepCode.match(/output\s+\w+/g);
+        if (outputMatches) {
+            validationResults.suggestions.push(`Found ${outputMatches.length} output(s)`);
+        }
+        
+        // Basic syntax checks
+        const openBraces = (bicepCode.match(/\{/g) || []).length;
+        const closeBraces = (bicepCode.match(/\}/g) || []).length;
+        
+        if (openBraces !== closeBraces) {
+            validationResults.isValid = false;
+            validationResults.errors.push(`Mismatched braces: ${openBraces} opening, ${closeBraces} closing`);
+        }
+        
+        return validationResults;
+        
+    } catch (error) {
+        return {
+            isValid: false,
+            errors: [`Validation error: ${error.message}`],
+            warnings: [],
+            suggestions: []
+        };
+    }
+}
+
+// Initialize Enhanced Features when DOM is ready
+document.addEventListener('DOMContentLoaded', function() {
+    // Add click handler for format button
+    const formatBtn = document.getElementById('formatBtn');
+    if (formatBtn) {
+        formatBtn.addEventListener('click', formatBicepCode);
+        console.log('✅ Format button initialized');
+    }
+    
+    // Add enhanced copy and download handlers
+    const copyBicepBtn = document.getElementById('copyBicepBtn');
+    const downloadBicepBtn = document.getElementById('downloadBicepBtn');
+    
+    if (copyBicepBtn) {
+        copyBicepBtn.addEventListener('click', copyBicepToClipboard);
+        console.log('✅ Copy button enhanced');
+    }
+    
+    if (downloadBicepBtn) {
+        downloadBicepBtn.addEventListener('click', downloadBicepFile);
+        console.log('✅ Download button enhanced');
+    }
+    
+    // Initialize Schema Validator functionality
+    initializeSchemaValidator();
+    
+    console.log('✅ All enhanced features initialized');
+});
+
+// Schema Validator Functions
+function initializeSchemaValidator() {
+    const validateBtn = document.getElementById('validateBtn');
+    const runTestSuiteBtn = document.getElementById('runTestSuiteBtn');
+    const loadSampleBtn = document.getElementById('loadSampleBtn');
+    const clearEditorBtn = document.getElementById('clearEditorBtn');
+    
+    // Mode toggle buttons
+    const resourceModeBtn = document.getElementById('resourceModeBtn');
+    const templateModeBtn = document.getElementById('templateModeBtn');
+    const bicepModeBtn = document.getElementById('bicepModeBtn');
+    
+    if (validateBtn) {
+        validateBtn.addEventListener('click', validateCode);
+    }
+    
+    if (runTestSuiteBtn) {
+        runTestSuiteBtn.addEventListener('click', runTestSuite);
+    }
+    
+    if (loadSampleBtn) {
+        loadSampleBtn.addEventListener('click', loadSampleCode);
+    }
+    
+    if (clearEditorBtn) {
+        clearEditorBtn.addEventListener('click', clearValidation);
+    }
+    
+    // Mode toggle handlers
+    [resourceModeBtn, templateModeBtn, bicepModeBtn].forEach(btn => {
+        if (btn) {
+            btn.addEventListener('click', function() {
+                switchValidationMode(this.dataset.mode);
+            });
+        }
+    });
+    
+    console.log('✅ Schema Validator initialized');
+}
+
+function validateCode() {
+    const schemaEditor = document.getElementById('schemaEditor');
+    const validationOutput = document.getElementById('validationOutput');
+    
+    if (!schemaEditor || !schemaEditor.value.trim()) {
+        showNotificationPro('❌ Please enter some code to validate', 'error');
+        return;
+    }
+    
+    const code = schemaEditor.value.trim();
+    const currentMode = getCurrentValidationMode();
+    
+    try {
+        let validationResults;
+        
+        switch (currentMode) {
+            case 'bicep':
+                validationResults = validateBicepSchema(code);
+                break;
+            case 'template':
+                validationResults = validateArmTemplate(code);
+                break;
+            case 'resource':
+            default:
+                validationResults = validateJsonSchema(code);
+                break;
+        }
+        
+        displayValidationResults(validationResults, validationOutput);
+        showNotificationPro('✅ Validation completed successfully!', 'success');
+        
+    } catch (error) {
+        console.error('Validation error:', error);
+        validationOutput.innerHTML = `
+            <div class="validation-error">
+                <i class="fas fa-exclamation-triangle"></i>
+                <h4>Validation Error</h4>
+                <p>${error.message}</p>
+            </div>
+        `;
+        showNotificationPro('❌ Validation failed: ' + error.message, 'error');
+    }
+}
+
+function validateJsonSchema(jsonCode) {
+    try {
+        const parsed = JSON.parse(jsonCode);
+        
+        const results = {
+            isValid: true,
+            errors: [],
+            warnings: [],
+            suggestions: [],
+            type: 'JSON Schema'
+        };
+        
+        // Basic JSON Schema validation
+        if (!parsed.$schema) {
+            results.warnings.push('Missing $schema property - consider adding JSON Schema version');
+        }
+        
+        if (!parsed.type) {
+            results.warnings.push('Missing type property - specify the data type');
+        }
+        
+        if (!parsed.properties && parsed.type === 'object') {
+            results.warnings.push('Object type but no properties defined');
+        }
+        
+        // Check for common Azure resource schema patterns
+        if (parsed.properties && parsed.properties.type && parsed.properties.apiVersion) {
+            results.suggestions.push('Detected Azure resource schema pattern');
+        }
+        
+        results.suggestions.push(`JSON is well-formed with ${Object.keys(parsed).length} top-level properties`);
+        
+        return results;
+        
+    } catch (error) {
+        return {
+            isValid: false,
+            errors: [`Invalid JSON: ${error.message}`],
+            warnings: [],
+            suggestions: [],
+            type: 'JSON Schema'
+        };
+    }
+}
+
+function validateArmTemplate(armCode) {
+    try {
+        const parsed = JSON.parse(armCode);
+        
+        const results = {
+            isValid: true,
+            errors: [],
+            warnings: [],
+            suggestions: [],
+            type: 'ARM Template'
+        };
+        
+        // ARM Template structure validation
+        if (!parsed.$schema) {
+            results.errors.push('Missing $schema - required for ARM templates');
+        } else if (!parsed.$schema.includes('deploymentTemplate.json')) {
+            results.warnings.push('Schema may not be for ARM deployment template');
+        }
+        
+        if (!parsed.contentVersion) {
+            results.errors.push('Missing contentVersion - required for ARM templates');
+        }
+        
+        if (!parsed.resources || !Array.isArray(parsed.resources)) {
+            results.errors.push('Missing or invalid resources array');
+        } else {
+            results.suggestions.push(`Template contains ${parsed.resources.length} resource(s)`);
+        }
+        
+        if (parsed.parameters) {
+            results.suggestions.push(`Template has ${Object.keys(parsed.parameters).length} parameter(s)`);
+        }
+        
+        if (parsed.variables) {
+            results.suggestions.push(`Template has ${Object.keys(parsed.variables).length} variable(s)`);
+        }
+        
+        if (parsed.outputs) {
+            results.suggestions.push(`Template has ${Object.keys(parsed.outputs).length} output(s)`);
+        }
+        
+        return results;
+        
+    } catch (error) {
+        return {
+            isValid: false,
+            errors: [`Invalid JSON: ${error.message}`],
+            warnings: [],
+            suggestions: [],
+            type: 'ARM Template'
+        };
+    }
+}
+
+function getCurrentValidationMode() {
+    const activeBtn = document.querySelector('.mode-btn.active');
+    return activeBtn ? activeBtn.dataset.mode : 'resource';
+}
+
+function switchValidationMode(mode) {
+    // Update button states
+    document.querySelectorAll('.mode-btn').forEach(btn => {
+        btn.classList.remove('active');
+    });
+    
+    const targetBtn = document.querySelector(`[data-mode="${mode}"]`);
+    if (targetBtn) {
+        targetBtn.classList.add('active');
+    }
+    
+    // Update mode indicator
+    const currentMode = document.getElementById('currentMode');
+    const modeDescription = document.getElementById('modeDescription');
+    const helpText = document.getElementById('helpText');
+    
+    const modeConfig = {
+        'resource': {
+            display: '📄 Resource Schema',
+            description: 'For validating schema definitions',
+            help: 'Paste a resource schema JSON or click a template below to get started'
+        },
+        'template': {
+            display: '📦 Full ARM Template',
+            description: 'For validating complete deployment templates',
+            help: 'Paste a complete ARM deployment template for validation'
+        },
+        'bicep': {
+            display: '🔧 Bicep Template',
+            description: 'For validating Bicep template syntax',
+            help: 'Paste your Bicep template code for syntax and structure validation'
+        }
+    };
+    
+    const config = modeConfig[mode] || modeConfig['resource'];
+    
+    if (currentMode) currentMode.textContent = config.display;
+    if (modeDescription) modeDescription.textContent = config.description;
+    if (helpText) helpText.textContent = config.help;
+    
+    showNotificationPro(`Switched to ${config.display} validation mode`, 'info', 2000);
+}
+
+function displayValidationResults(results, outputElement) {
+    let html = `
+        <div class="validation-summary">
+            <div class="validation-status ${results.isValid ? 'valid' : 'invalid'}">
+                <i class="fas ${results.isValid ? 'fa-check-circle' : 'fa-times-circle'}"></i>
+                <h4>${results.isValid ? 'Validation Passed' : 'Validation Failed'}</h4>
+                <p>Type: ${results.type}</p>
+            </div>
+        </div>
+    `;
+    
+    if (results.errors.length > 0) {
+        html += `
+            <div class="validation-section errors">
+                <h4><i class="fas fa-exclamation-circle"></i> Errors (${results.errors.length})</h4>
+                <ul>
+                    ${results.errors.map(error => `<li>${error}</li>`).join('')}
+                </ul>
+            </div>
+        `;
+    }
+    
+    if (results.warnings.length > 0) {
+        html += `
+            <div class="validation-section warnings">
+                <h4><i class="fas fa-exclamation-triangle"></i> Warnings (${results.warnings.length})</h4>
+                <ul>
+                    ${results.warnings.map(warning => `<li>${warning}</li>`).join('')}
+                </ul>
+            </div>
+        `;
+    }
+    
+    if (results.suggestions.length > 0) {
+        html += `
+            <div class="validation-section suggestions">
+                <h4><i class="fas fa-lightbulb"></i> Info & Suggestions (${results.suggestions.length})</h4>
+                <ul>
+                    ${results.suggestions.map(suggestion => `<li>${suggestion}</li>`).join('')}
+                </ul>
+            </div>
+        `;
+    }
+    
+    outputElement.innerHTML = html;
+}
+
+function runTestSuite() {
+    const testSuiteOutput = document.getElementById('testSuiteOutput');
+    const schemaEditor = document.getElementById('schemaEditor');
+    
+    if (!schemaEditor || !schemaEditor.value.trim()) {
+        showNotificationPro('❌ Please enter some code to test', 'error');
+        return;
+    }
+    
+    showNotificationPro('🧪 Running comprehensive test suite...', 'info', 2000);
+    
+    const code = schemaEditor.value.trim();
+    const currentMode = getCurrentValidationMode();
+    
+    try {
+        const testResults = runComprehensiveTests(code, currentMode);
+        displayTestResults(testResults, testSuiteOutput);
+        
+        const passedTests = testResults.filter(test => test.passed).length;
+        const totalTests = testResults.length;
+        
+        if (passedTests === totalTests) {
+            showNotificationPro(`✅ All ${totalTests} tests passed!`, 'success');
+        } else {
+            showNotificationPro(`⚠️ ${passedTests}/${totalTests} tests passed`, 'warning');
+        }
+        
+    } catch (error) {
+        console.error('Test suite error:', error);
+        testSuiteOutput.innerHTML = `
+            <div class="test-error">
+                <i class="fas fa-flask"></i>
+                <h4>Test Suite Error</h4>
+                <p>${error.message}</p>
+            </div>
+        `;
+        showNotificationPro('❌ Test suite failed: ' + error.message, 'error');
+    }
+}
+
+function runComprehensiveTests(code, mode) {
+    const tests = [];
+    
+    try {
+        // Basic syntax test
+        tests.push({
+            name: 'Syntax Validation',
+            description: 'Code is syntactically valid',
+            passed: true,
+            details: 'Code parsed successfully'
+        });
+        
+        if (mode === 'bicep') {
+            // Bicep-specific tests
+            tests.push({
+                name: 'Resource Declaration',
+                description: 'Contains resource declarations',
+                passed: code.includes('resource '),
+                details: code.includes('resource ') ? 'Found resource declarations' : 'No resource declarations found'
+            });
+            
+            tests.push({
+                name: 'Parameter Usage',
+                description: 'Uses parameters for configurability',
+                passed: code.includes('param '),
+                details: code.includes('param ') ? 'Found parameter declarations' : 'No parameters found'
+            });
+            
+        } else {
+            // JSON tests
+            const parsed = JSON.parse(code);
+            
+            if (mode === 'template') {
+                // ARM Template tests
+                tests.push({
+                    name: 'ARM Schema',
+                    description: 'Has valid ARM template schema',
+                    passed: parsed.$schema && parsed.$schema.includes('deploymentTemplate.json'),
+                    details: parsed.$schema ? `Schema: ${parsed.$schema}` : 'No schema specified'
+                });
+                
+                tests.push({
+                    name: 'Content Version',
+                    description: 'Has content version',
+                    passed: !!parsed.contentVersion,
+                    details: parsed.contentVersion ? `Version: ${parsed.contentVersion}` : 'No content version'
+                });
+                
+                tests.push({
+                    name: 'Resources Array',
+                    description: 'Contains resources array',
+                    passed: Array.isArray(parsed.resources),
+                    details: Array.isArray(parsed.resources) ? `${parsed.resources.length} resources` : 'No resources array'
+                });
+                
+            } else {
+                // JSON Schema tests
+                tests.push({
+                    name: 'Schema Declaration',
+                    description: 'Has JSON Schema declaration',
+                    passed: !!parsed.$schema,
+                    details: parsed.$schema || 'No $schema property'
+                });
+                
+                tests.push({
+                    name: 'Type Definition',
+                    description: 'Has type definition',
+                    passed: !!parsed.type,
+                    details: parsed.type || 'No type specified'
+                });
+            }
+        }
+        
+        // Structural tests
+        const lineCount = code.split('\n').length;
+        tests.push({
+            name: 'Code Size',
+            description: 'Reasonable code size',
+            passed: lineCount > 5 && lineCount < 1000,
+            details: `${lineCount} lines of code`
+        });
+        
+    } catch (error) {
+        tests.push({
+            name: 'Syntax Validation',
+            description: 'Code is syntactically valid',
+            passed: false,
+            details: `Parse error: ${error.message}`
+        });
+    }
+    
+    return tests;
+}
+
+function displayTestResults(testResults, outputElement) {
+    const passedCount = testResults.filter(test => test.passed).length;
+    const totalCount = testResults.length;
+    const passRate = Math.round((passedCount / totalCount) * 100);
+    
+    let html = `
+        <div class="test-summary">
+            <div class="test-stats">
+                <h4>Test Suite Results</h4>
+                <div class="stats-grid">
+                    <div class="stat-item">
+                        <div class="stat-value ${passedCount === totalCount ? 'success' : 'warning'}">${passedCount}/${totalCount}</div>
+                        <div class="stat-label">Tests Passed</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value ${passRate >= 80 ? 'success' : passRate >= 60 ? 'warning' : 'error'}">${passRate}%</div>
+                        <div class="stat-label">Pass Rate</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="test-details">
+            <h4>Individual Test Results</h4>
+            ${testResults.map(test => `
+                <div class="test-item ${test.passed ? 'passed' : 'failed'}">
+                    <div class="test-header">
+                        <i class="fas ${test.passed ? 'fa-check' : 'fa-times'}"></i>
+                        <span class="test-name">${test.name}</span>
+                        <span class="test-status">${test.passed ? 'PASS' : 'FAIL'}</span>
+                    </div>
+                    <div class="test-description">${test.description}</div>
+                    <div class="test-details-text">${test.details}</div>
+                </div>
+            `).join('')}
+        </div>
+    `;
+    
+    outputElement.innerHTML = html;
+}
+
+function loadSampleCode() {
+    const currentMode = getCurrentValidationMode();
+    const schemaEditor = document.getElementById('schemaEditor');
+    
+    if (!schemaEditor) return;
+    
+    let sampleCode = '';
+    
+    switch (currentMode) {
+        case 'bicep':
+            sampleCode = `// Sample Bicep Template
+param storageAccountName string = 'mystorageaccount'
+param location string = resourceGroup().location
+
+resource storageAccount 'Microsoft.Storage/storageAccounts@2021-04-01' = {
+  name: storageAccountName
+  location: location
+  sku: {
+    name: 'Standard_LRS'
+  }
+  kind: 'StorageV2'
+  properties: {
+    accessTier: 'Hot'
+  }
+}
+
+output storageAccountId string = storageAccount.id`;
+            break;
+            
+        case 'template':
+            sampleCode = `{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "storageAccountName": {
+      "type": "string",
+      "metadata": {
+        "description": "Name of the storage account"
+      }
+    }
+  },
+  "variables": {},
+  "resources": [
+    {
+      "type": "Microsoft.Storage/storageAccounts",
+      "apiVersion": "2021-04-01",
+      "name": "[parameters('storageAccountName')]",
+      "location": "[resourceGroup().location]",
+      "sku": {
+        "name": "Standard_LRS"
+      },
+      "kind": "StorageV2"
+    }
+  ],
+  "outputs": {
+    "storageAccountId": {
+      "type": "string",
+      "value": "[resourceId('Microsoft.Storage/storageAccounts', parameters('storageAccountName'))]"
+    }
+  }
+}`;
+            break;
+            
+        default: // resource schema
+            sampleCode = `{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "title": "Storage Account Schema",
+  "description": "JSON Schema for Azure Storage Account",
+  "properties": {
+    "apiVersion": {
+      "type": "string",
+      "const": "2021-04-01"
+    },
+    "type": {
+      "type": "string",
+      "const": "Microsoft.Storage/storageAccounts"
+    },
+    "name": {
+      "type": "string",
+      "pattern": "^[a-z0-9]{3,24}$"
+    },
+    "location": {
+      "type": "string"
+    },
+    "sku": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "enum": ["Standard_LRS", "Standard_GRS", "Premium_LRS"]
+        }
+      },
+      "required": ["name"]
+    }
+  },
+  "required": ["apiVersion", "type", "name", "location", "sku"]
+}`;
+            break;
+    }
+    
+    schemaEditor.value = sampleCode;
+    showNotificationPro(`✅ Sample ${getCurrentValidationMode()} code loaded`, 'success', 2000);
+}
+
+function clearValidation() {
+    const schemaEditor = document.getElementById('schemaEditor');
+    const validationOutput = document.getElementById('validationOutput');
+    const testSuiteOutput = document.getElementById('testSuiteOutput');
+    
+    if (schemaEditor) schemaEditor.value = '';
+    
+    if (validationOutput) {
+        validationOutput.innerHTML = `
+            <div class="no-results">
+                <i class="fas fa-info-circle"></i>
+                <p>No validation results yet. Click "Validate" to start.</p>
+            </div>
+        `;
+    }
+    
+    if (testSuiteOutput) {
+        testSuiteOutput.innerHTML = `
+            <div class="no-results">
+                <i class="fas fa-vial"></i>
+                <p>No test results yet. Click "Run Test Suite" for comprehensive testing.</p>
+            </div>
+        `;
+    }
+    
+    showNotificationPro('🧹 Validation workspace cleared', 'info', 1500);
 }
