@@ -683,11 +683,50 @@ param subnetName string = '${config.subnetName}'
         }
 
         function copyToClipboard() {
-            navigator.clipboard.writeText(currentBicep).then(() => {
-                showResult('outputResults', 'success', '📋 Bicep code copied to clipboard!');
-            }).catch(() => {
+            if (!currentBicep) {
+                showResult('outputResults', 'error', '❌ Nothing to copy. Please convert an ARM template first.');
+                return;
+            }
+
+            // Prefer modern clipboard API when available
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(currentBicep).then(() => {
+                    showResult('outputResults', 'success', '📋 Bicep code copied to clipboard!');
+                }).catch((err) => {
+                    // Fallback to older execCommand approach
+                    console.warn('navigator.clipboard failed, falling back to execCommand:', err);
+                    fallbackCopyTextToClipboard(currentBicep);
+                });
+            } else {
+                // Fallback for insecure contexts or older browsers
+                fallbackCopyTextToClipboard(currentBicep);
+            }
+        }
+
+        function fallbackCopyTextToClipboard(text) {
+            try {
+                const textarea = document.createElement('textarea');
+                textarea.value = text;
+                // Avoid scrolling to bottom
+                textarea.style.position = 'fixed';
+                textarea.style.left = '-9999px';
+                textarea.style.top = '0';
+                document.body.appendChild(textarea);
+                textarea.focus();
+                textarea.select();
+
+                const successful = document.execCommand('copy');
+                document.body.removeChild(textarea);
+
+                if (successful) {
+                    showResult('outputResults', 'success', '📋 Bicep code copied to clipboard (fallback)!');
+                } else {
+                    showResult('outputResults', 'error', '❌ Failed to copy to clipboard using fallback. Please select and copy manually.');
+                }
+            } catch (e) {
+                console.error('Fallback copy failed', e);
                 showResult('outputResults', 'error', '❌ Failed to copy to clipboard. Please select and copy manually.');
-            });
+            }
         }
 
         function downloadBicep() {
