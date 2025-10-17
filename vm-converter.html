@@ -178,6 +178,49 @@
             overflow-y: auto;
             margin-top: 15px;
         }
+        .tooltip {
+            position: relative;
+            display: inline-block;
+        }
+        .tooltip .tooltiptext {
+            visibility: hidden;
+            width: 280px;
+            background-color: #333;
+            color: #fff;
+            text-align: left;
+            border-radius: 6px;
+            padding: 8px 12px;
+            position: absolute;
+            z-index: 1;
+            bottom: 125%;
+            left: 50%;
+            margin-left: -140px;
+            opacity: 0;
+            transition: opacity 0.3s;
+            font-size: 12px;
+            line-height: 1.4;
+        }
+        .tooltip .tooltiptext::after {
+            content: "";
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            margin-left: -5px;
+            border-width: 5px;
+            border-style: solid;
+            border-color: #333 transparent transparent transparent;
+        }
+        .tooltip:hover .tooltiptext {
+            visibility: visible;
+            opacity: 1;
+        }
+        .btn-info {
+            background: #17a2b8;
+            color: white;
+        }
+        .btn-info:hover {
+            background: #138496;
+        }
     </style>
 </head>
 <body>
@@ -256,7 +299,16 @@ Example structure:
                 <div class="section-title">📤 Bicep Output</div>
                 
                 <div class="controls">
-                    <button class="btn-success" onclick="copyToClipboard()" id="copyBtn" disabled>📋 Copy Bicep</button>
+                    <div class="tooltip">
+                        <button class="btn-success" onclick="copyToClipboard()" id="copyBtn" disabled>📋 Copy Bicep</button>
+                        <span class="tooltiptext">
+                            <strong>Copy to Clipboard</strong><br>
+                            • Uses modern clipboard API when available<br>
+                            • Falls back to older browser support<br>
+                            • Works in secure (HTTPS) and local contexts
+                        </span>
+                    </div>
+                    <button class="btn-info" onclick="selectAllBicep()" id="selectBtn" disabled>📝 Select All</button>
                     <button class="btn-secondary" onclick="downloadBicep()" id="downloadBtn" disabled>💾 Download .bicep</button>
                 </div>
                 
@@ -757,12 +809,37 @@ param subnetName string = '${config.subnetName}'
 
         function enableButtons() {
             document.getElementById('copyBtn').disabled = false;
+            document.getElementById('selectBtn').disabled = false;
             document.getElementById('downloadBtn').disabled = false;
         }
 
         function disableButtons() {
             document.getElementById('copyBtn').disabled = true;
+            document.getElementById('selectBtn').disabled = true;
             document.getElementById('downloadBtn').disabled = true;
+        }
+
+        function selectAllBicep() {
+            if (!currentBicep) {
+                showResult('outputResults', 'error', '❌ Nothing to select. Please convert an ARM template first.');
+                return;
+            }
+
+            const outputElement = document.getElementById('bicepOutput');
+            
+            // Create a range to select all text content
+            if (window.getSelection && document.createRange) {
+                const range = document.createRange();
+                range.selectNodeContents(outputElement);
+                const selection = window.getSelection();
+                selection.removeAllRanges();
+                selection.addRange(range);
+                
+                showResult('outputResults', 'info', '📝 All Bicep code selected. Use Ctrl+C (Cmd+C on Mac) to copy.');
+            } else {
+                // Fallback for older browsers
+                showResult('outputResults', 'error', '❌ Text selection not supported in this browser. Please use the Copy button or select manually.');
+            }
         }
 
         // Initialize
