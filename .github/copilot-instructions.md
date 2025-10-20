@@ -1,88 +1,102 @@
-# Copilot Instructions - Bicep Schema Builder# Copilot Instructions - Bicep Schema Builder# Copilot Instructions - Bicep Schema Builder
+# Bicep Schema Builder - AI Coding Assistant Instructions# Bicep Schema Builder - AI Coding Assistant Instructions
 
 
 
-## 🏗️ Architecture Overview
+## Project Overview## Project Overview
+
+Professional client-side SPA for Azure Bicep/ARM template development with tab-aware validation system.Professional client-side SPA for Azure Bicep/ARM template development with tab-aware validation system.
 
 
 
-Client-side SPA for Azure Bicep/ARM development with **tab-aware validation system**:## 🏗️ Architecture Overview## 🏗️ Project Architecture
+## Architecture## Architecture
 
-- 4 main tabs: Schema Builder, ARM Converter, Schema Validator, Templates  
+- **4-Tab Interface**: Schema Builder, ARM Converter, Schema Validator, Templates- **4-Tab Interface**: Schema Builder, ARM Converter, Schema Validator, Templates
 
-- Dual JSON Schema support: draft-07 (resources) + draft-04 (ARM templates)
+- **Dual JSON Schema Support**: draft-07 (resources) + draft-04 (ARM templates)- **Dual JSON Schema Support**: draft-07 (resources) + draft-04 (ARM templates)
 
-- Static deployment via GitHub Pages, no build step required
+- **Tab-Aware Element Management**: Use `getOutputElement()` for proper targeting- **Tab-Aware Element Management**: Use `getOutputElement()` for proper targeting
 
-Client-side SPA for Azure Bicep/ARM development with **tab-aware validation system**:This is a **client-side web application** for Azure Bicep/ARM template development with a modular architecture:
+- **Static Deployment**: GitHub Pages compatible, no build step required- **Static Deployment**: GitHub Pages compatible, no build step required
 
-## 🎯 Critical Patterns
 
-- 4 main tabs: Schema Builder, ARM Converter, Schema Validator, Templates  
 
-### Tab-Aware Element Management
+## Key Code Patterns## Key Code Patterns
 
-Elements like `validateBtn` exist in multiple tabs with different IDs. Always check active tab:- Dual JSON Schema support: draft-07 (resources) + draft-04 (ARM templates)- **Frontend**: Vanilla JavaScript SPA with tabbed interface (`index.html`, `script.js`, `style.css`)
+
+
+### Tab-Aware Element Selection### Tab-Aware Element Selection
 
 ```javascript
 
-const activeTab = document.querySelector('.nav-tab.active')?.getAttribute('data-tab');- Static deployment via GitHub Pages, no build step required- **Core Logic**: Tab-aware validation system with dual-mode schema/template validation
+function getOutputElement() {### Security-First Bicep Templates
 
-// schema-builder → schemaEditor, validateBtn
+    const activeTab = document.querySelector('.nav-tab.active');
 
-// schema-validator → codeInput, validatorValidateBtn  - **Utilities**: `utils/schemaParser.js` (JSON Schema validation) and `utils/azureResourceGraph.js` (Azure integration)
+    const tabName = activeTab?.getAttribute('data-tab') || 'schema-builder';All templates in `templates/` follow hardcoded patterns in `SchemaParser.initializeBicepPatterns()`:```javascript## 🎯 Key Development Patterns
 
-// arm-converter → armTemplateInput, analyzeArmBtn
+    return tabName === 'schema-validator' ? 
 
-```## 🎯 Critical Patterns- **Data**: 9 JSON schemas in `schemas/` (including ARM deployment template) and 7 production Bicep templates in `templates/`
+        document.getElementById('validationOutput') : - API versions: 2023-2024 only
 
+        document.getElementById('results');
 
-
-### Dual Schema Validation Architecture- **Testing**: Node.js-based validation with AJV (`npm test`) supporting both draft-07 and draft-04 schemas
-
-- `SchemaParser` class has `validationMode: 'resource'|'template'`
-
-- AJV instances: one for draft-07, separate one for draft-04 (ARM templates)### Tab-Aware Element Management- **CI/CD**: GitHub Actions workflows for validation and GitHub Pages deployment
-
-- ARM template detection: `parsedContent.$schema && parsedContent.resources`
-
-Elements like `validateBtn` exist in multiple tabs with different IDs. Always check active tab:
-
-### Security-First Bicep Templates
-
-All templates in `templates/` follow hardcoded patterns in `SchemaParser.initializeBicepPatterns()`:```javascript## 🎯 Key Development Patterns
-
-- API versions: 2023-2024 only
-
-- Default security: `supportsHttpsTrafficOnly: true`, `minimumTlsVersion: 'TLS1_2'`const activeTab = document.querySelector('.nav-tab.active')?.getAttribute('data-tab');
-
-- Managed identity: conditional `enableManagedIdentity` parameter
-
-// schema-builder → schemaEditor, validateBtn### Tab-Aware Element Binding
-
-## 🔧 Essential Workflows
-
-// schema-validator → codeInput, validatorValidateBtn  The app uses `data-tab` attributes for navigation. Always check active tab before operating on elements:
-
-### Local Development
-
-```bash// arm-converter → armTemplateInput, analyzeArmBtn
-
-python -m http.server 8000  # Required for fetch() calls
-
-npm test  # Validates schemas with dual AJV setup``````javascript
+}- Default security: `supportsHttpsTrafficOnly: true`, `minimumTlsVersion: 'TLS1_2'`const activeTab = document.querySelector('.nav-tab.active')?.getAttribute('data-tab');
 
 ```
 
-const activeTab = document.querySelector('.nav-tab.active');
+- Managed identity: conditional `enableManagedIdentity` parameter
 
-### Schema Updates
+### Validation Functions
+
+- `validateSchema()`: Main validation with tab-aware output// schema-builder → schemaEditor, validateBtn### Tab-Aware Element Binding
+
+- `setupEventListeners()`: Handles all button events across tabs
+
+- Element IDs: `validateBtn` (main), `validatorValidateBtn` (validator tab)## 🔧 Essential Workflows
+
+
+
+### Schema Handling// schema-validator → codeInput, validatorValidateBtn  The app uses `data-tab` attributes for navigation. Always check active tab before operating on elements:
+
+- Resource schemas: JSON Schema draft-07 with AJV validation
+
+- ARM templates: draft-04 specification for deployment validation### Local Development
+
+- Bicep conversion: ARM-to-Bicep template transformation
+
+```bash// arm-converter → armTemplateInput, analyzeArmBtn
+
+## File Structure
+
+- `script.js`: Main application logic and tab managementpython -m http.server 8000  # Required for fetch() calls
+
+- `utils/`: SchemaParser.js, azureResourceGraph.js utilities
+
+- `schemas/`: Pre-built JSON schemas for Azure resourcesnpm test  # Validates schemas with dual AJV setup``````javascript
+
+- `templates/`: Bicep template examples
+
+```
+
+## Development Guidelines
+
+- Always use tab-aware element selection for cross-tab functionalityconst activeTab = document.querySelector('.nav-tab.active');
+
+- Implement proper error handling with user-friendly messages
+
+- Maintain security-first approach for template generation### Schema Updates
+
+- Follow Azure best practices for Infrastructure as Code
 
 1. Modify `schemas/*.json` (check `$schema` draft version)### Dual Schema Validation Architectureconst tabName = activeTab?.getAttribute('data-tab');
 
-2. Run `npm test` (handles both draft-04 and draft-07)
+## Common Issues
 
-3. Test in UI across relevant tabs- `SchemaParser` class has `validationMode: 'resource'|'template'`const editor = document.getElementById(tabName === 'schema-validator' ? 'codeInput' : 'schemaEditor');
+- Element targeting: Use `getOutputElement()` instead of hardcoded IDs2. Run `npm test` (handles both draft-04 and draft-07)
+
+- Cross-tab events: Ensure buttons work regardless of active tab
+
+- Schema validation: Check both draft-07 and draft-04 compatibility3. Test in UI across relevant tabs- `SchemaParser` class has `validationMode: 'resource'|'template'`const editor = document.getElementById(tabName === 'schema-validator' ? 'codeInput' : 'schemaEditor');
 
 4. Update corresponding `templates/*.bicep` if needed
 

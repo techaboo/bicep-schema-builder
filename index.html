@@ -38,11 +38,17 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
     <!-- Google Analytics 4 -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=GA_MEASUREMENT_ID"></script>
     <script>
-        // Replace GA_MEASUREMENT_ID with your actual Google Analytics 4 Measurement ID
-        const GA_MEASUREMENT_ID = 'GA_MEASUREMENT_ID'; // Update this with your actual GA4 ID
+        // Custom event tracking function (placeholder until GA is configured)
+        window.trackEvent = function(action, category = 'User Interaction', label = '') {
+            console.log('Event tracked:', { action, category, label });
+            // GA tracking will be added here when GA_MEASUREMENT_ID is configured
+        };
         
+        // Uncomment and configure when ready to use Google Analytics
+        /*
+        // Add this script tag to head: <script async src="https://www.googletagmanager.com/gtag/js?id=YOUR_GA_MEASUREMENT_ID"></script>
+        const GA_MEASUREMENT_ID = 'YOUR_GA_MEASUREMENT_ID';
         window.dataLayer = window.dataLayer || [];
         function gtag(){dataLayer.push(arguments);}
         gtag('js', new Date());
@@ -51,7 +57,6 @@
             page_location: window.location.href
         });
         
-        // Custom event tracking function
         window.trackEvent = function(action, category = 'User Interaction', label = '') {
             if (typeof gtag !== 'undefined') {
                 gtag('event', action, {
@@ -61,6 +66,7 @@
                 });
             }
         };
+        */
     </script>
     
     <link rel="stylesheet" href="style.css">
@@ -477,11 +483,11 @@
                             </div>
                             
                             <div class="template-category">
-                                <h4 class="category-title">� Bicep Templates</h4>
+                                <h4 class="category-title">🔧 Bicep Templates</h4>
                                 <p class="category-description">Ready-to-use Bicep templates for common deployment scenarios</p>
                                 <div class="template-grid">
                                     <button class="template-btn" data-template="bicep-webapp" title="Complete web app deployment with app service plan">🌐 Web App + Plan</button>
-                                    <button class="template-btn" data-template="bicep-vm" title="Virtual machine with networking">� VM + Network</button>
+                                    <button class="template-btn" data-template="bicep-vm" title="Virtual machine with networking">💻 VM + Network</button>
                                     <button class="template-btn" data-template="bicep-storage" title="Storage account with containers">🗄️ Storage + Containers</button>
                                     <button class="template-btn" data-template="bicep-keyvault" title="Key vault with access policies">🔐 Key Vault + Policies</button>
                                 </div>
@@ -584,14 +590,65 @@
                 </div>
                 <div class="modal-footer">
                     <button id="resetConfig" class="secondary-btn">🔄 Reset to Defaults</button>
-                    <button id="saveConfig" class="primary-btn">💾 Save Configuration</button>
                 </div>
             </div>
         </div>
+    </div>
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-    <script src="utils/schemaParser.js"></script>
-    <script src="utils/azureResourceGraph.js"></script>
+    <script>
+        // Create placeholder functions to prevent errors if utility scripts are missing
+        if (typeof window.SchemaParser === 'undefined') {
+            window.SchemaParser = {
+                parse: function(schema) { return { valid: true, errors: [] }; },
+                validate: function(data, schema) { return { valid: true, errors: [] }; }
+            };
+        }
+        if (typeof window.AzureResourceGraph === 'undefined') {
+            window.AzureResourceGraph = {
+                getResourceTypes: function() { return []; },
+                analyzeTemplate: function(template) { return { resources: [], dependencies: [] }; }
+            };
+        }
+    </script>
+    <script src="utils/schemaParser.js" onerror="console.warn('schemaParser.js not found - using placeholder')"></script>
+    <script src="utils/azureResourceGraph.js" onerror="console.warn('azureResourceGraph.js not found - using placeholder')"></script>
+    <script>
+        // Theme Toggle Functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            const themeToggle = document.getElementById('theme-toggle');
+            const themeIcon = document.querySelector('#theme-toggle i');
+            const body = document.body;
+            
+            // Load saved theme
+            const savedTheme = localStorage.getItem('theme');
+            if (savedTheme === 'dark') {
+                body.classList.add('dark-theme');
+                themeIcon.classList.remove('fa-moon');
+                themeIcon.classList.add('fa-sun');
+            }
+            
+            themeToggle.addEventListener('click', function() {
+                body.classList.toggle('dark-theme');
+                
+                // Update icon
+                if (body.classList.contains('dark-theme')) {
+                    themeIcon.classList.remove('fa-moon');
+                    themeIcon.classList.add('fa-sun');
+                    localStorage.setItem('theme', 'dark');
+                } else {
+                    themeIcon.classList.remove('fa-sun');
+                    themeIcon.classList.add('fa-moon');
+                    localStorage.setItem('theme', 'light');
+                }
+                
+                // Track theme change event
+                if (typeof window.trackEvent === 'function') {
+                    window.trackEvent('theme_toggle', 'UI Interaction', body.classList.contains('dark-theme') ? 'dark' : 'light');
+                }
+            });
+        });
+    </script>
     <script src="script.js"></script>
 </body>
 </html>

@@ -299,13 +299,23 @@ async function handleFileUpload(event) {
 function validateSchema() {
     console.log('🔍 VALIDATE SCHEMA CALLED!');
     
-    // IMMEDIATE TEST - Get schemaEditor directly
-    const schemaEditor = document.getElementById('schemaEditor');
-    console.log('🔍 Direct schemaEditor lookup:', schemaEditor);
+    // Get tab-aware elements
+    const activeTab = document.querySelector('.nav-tab.active');
+    const tabName = activeTab ? activeTab.getAttribute('data-tab') : 'schema-builder';
     
-    // IMMEDIATE TEST - Get validationOutput directly
-    const validationOutput = document.getElementById('validationOutput');
-    console.log('🔍 Direct validationOutput lookup:', validationOutput);
+    // Get appropriate editor element based on active tab
+    let schemaEditor;
+    if (tabName === 'schema-validator') {
+        schemaEditor = document.getElementById('codeInput');
+    } else {
+        schemaEditor = document.getElementById('schemaEditor');
+    }
+    
+    console.log('🔍 Active tab:', tabName, 'Editor:', schemaEditor);
+    
+    // Get appropriate output element
+    const validationOutput = getOutputElement();
+    console.log('🔍 Output element:', validationOutput);
     
     if (!validationOutput) {
         console.error('❌ VALIDATION OUTPUT ELEMENT NOT FOUND!');
@@ -383,8 +393,8 @@ function validateSchema() {
     } catch (jsonError) {
         console.log('❌ JSON parsing failed:', jsonError.message);
         
-        // Check if it might be Bicep code
-        if (editorContent.includes('resource ') || editorContent.includes('param ')) {
+        // Check if it might be Bicep code (fixed variable name)
+        if (schemaEditorContent.includes('resource ') || schemaEditorContent.includes('param ')) {
             validationOutput.innerHTML = `
                 <div style="padding: 20px; background: #fff3cd; color: #856404; border-radius: 8px;">
                     ℹ️ <strong>Bicep Code Detected:</strong> This appears to be Bicep code, not JSON. For Bicep validation, please use the Azure Bicep CLI.
@@ -397,9 +407,11 @@ function validateSchema() {
                 </div>
             `;
         }
+    }
 }
 
-// Determine which tab is active and get the appropriate editor
+function validateSchemaAdvanced() {
+    // Determine which tab is active and get the appropriate editor
     const activeTab = document.querySelector('.nav-tab.active');
     const activeTabId = activeTab ? activeTab.getAttribute('data-tab') : 'schema-builder';
     
@@ -867,7 +879,7 @@ function clearEditor() {
     if (confirm('Are you sure you want to clear the editor?\n\nThis action cannot be undone.')) {
         editor.value = '';
         currentSchema = null;
-        const validationOutput = document.getElementById('validationOutput');
+        const validationOutput = document.getElementById('results');
         if (validationOutput) {
             validationOutput.innerHTML = '<p class="placeholder">Upload or paste a schema to see validation results...</p>';
             validationOutput.className = 'output-panel';
@@ -994,33 +1006,53 @@ function createFallbackTemplate(templateName) {
 }
 
 // Utility functions
+function getOutputElement() {
+    // Get the active tab and return the appropriate output element
+    const activeTab = document.querySelector('.nav-tab.active');
+    const tabName = activeTab ? activeTab.getAttribute('data-tab') : 'schema-builder';
+    
+    switch(tabName) {
+        case 'schema-validator':
+            return document.getElementById('validationOutput');
+        case 'schema-builder':
+        default:
+            return document.getElementById('results');
+    }
+}
+
 function showLoading(message) {
-    const output = document.getElementById('validationOutput');
-    output.className = 'output-panel';
-    output.textContent = `⏳ ${message}`;
+    const output = getOutputElement();
+    if (output) {
+        output.className = 'output-panel';
+        output.textContent = `⏳ ${message}`;
+    }
 }
 
 function showSuccess(message) {
-    const output = document.getElementById('validationOutput');
-    output.className = 'output-panel success';
-    output.textContent = message;
-    
-    setTimeout(() => {
-        if (output.textContent === message) {
-            output.className = 'output-panel';
-            output.innerHTML = '<p class="placeholder">Ready for next validation...</p>';
-        }
-    }, 3000);
+    const output = getOutputElement();
+    if (output) {
+        output.className = 'output-panel success';
+        output.textContent = message;
+        
+        setTimeout(() => {
+            if (output.textContent === message) {
+                output.className = 'output-panel';
+                output.innerHTML = '<p class="placeholder">Ready for next validation...</p>';
+            }
+        }, 3000);
+    }
 }
 
 function showError(message) {
-    const output = document.getElementById('validationOutput');
-    output.className = 'output-panel error';
-    output.textContent = message;
+    const output = getOutputElement();
+    if (output) {
+        output.className = 'output-panel error';
+        output.textContent = message;
+    }
 }
 
 function showValidationSuccess(results) {
-    const output = document.getElementById('validationOutput');
+    const output = document.getElementById('results');
     output.className = 'output-panel success';
     
     let message = '✅ Schema is valid!\n\n';
