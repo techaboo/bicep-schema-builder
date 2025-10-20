@@ -7,8 +7,9 @@ This is a **client-side web application** for Azure Bicep/ARM template developme
 - **Frontend**: Vanilla JavaScript SPA with tabbed interface (`index.html`, `script.js`, `style.css`)
 - **Core Logic**: Tab-aware validation system with dual-mode schema/template validation
 - **Utilities**: `utils/schemaParser.js` (JSON Schema validation) and `utils/azureResourceGraph.js` (Azure integration)
-- **Data**: 9 JSON schemas in `schemas/` and 7 production Bicep templates in `templates/`
-- **Testing**: Node.js-based validation with AJV (`npm test`)
+- **Data**: 9 JSON schemas in `schemas/` (including ARM deployment template) and 7 production Bicep templates in `templates/`
+- **Testing**: Node.js-based validation with AJV (`npm test`) supporting both draft-07 and draft-04 schemas
+- **CI/CD**: GitHub Actions workflows for validation and GitHub Pages deployment
 
 ## 🎯 Key Development Patterns
 
@@ -25,6 +26,11 @@ const editor = document.getElementById(tabName === 'schema-validator' ? 'codeInp
 The `SchemaParser` class supports both resource schemas and full ARM templates:
 - `validationMode: 'resource'` - Individual Azure resource validation
 - `validationMode: 'template'` - Complete ARM deployment template validation
+
+### Schema Validation Strategy
+- **AJV-based validation**: Two validators for draft-07 (default) and draft-04 (ARM templates)
+- **Bicep patterns**: Hardcoded API versions, resource types, and naming patterns in `SchemaParser.initializeBicepPatterns()`
+- **Security-first templates**: All Bicep templates enforce HTTPS-only, TLS 1.2+, managed identities by default
 
 ### Event Binding Strategy
 Use centralized button binding to avoid duplicate event listeners:
