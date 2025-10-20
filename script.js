@@ -338,11 +338,11 @@ function validateSchema() {
     }
     
     // Continue with the actual validation process
-    const editorContent = schemaEditor.value.trim();
+    const schemaEditorContent = schemaEditor.value.trim();
     
     try {
         // Try to parse as JSON
-        const parsedContent = JSON.parse(editorContent);
+        const parsedContent = JSON.parse(schemaEditorContent);
         console.log('✅ Content parsed as JSON successfully');
         console.log('📊 Parsed content keys:', Object.keys(parsedContent));
         
@@ -397,10 +397,9 @@ function validateSchema() {
                 </div>
             `;
         }
-    }
 }
-    
-    // Determine which tab is active and get the appropriate editor
+
+// Determine which tab is active and get the appropriate editor
     const activeTab = document.querySelector('.nav-tab.active');
     const activeTabId = activeTab ? activeTab.getAttribute('data-tab') : 'schema-builder';
     
