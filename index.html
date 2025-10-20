@@ -44,29 +44,6 @@
             console.log('Event tracked:', { action, category, label });
             // GA tracking will be added here when GA_MEASUREMENT_ID is configured
         };
-        
-        // Uncomment and configure when ready to use Google Analytics
-        /*
-        // Add this script tag to head: <script async src="https://www.googletagmanager.com/gtag/js?id=YOUR_GA_MEASUREMENT_ID"></script>
-        const GA_MEASUREMENT_ID = 'YOUR_GA_MEASUREMENT_ID';
-        window.dataLayer = window.dataLayer || [];
-        function gtag(){dataLayer.push(arguments);}
-        gtag('js', new Date());
-        gtag('config', GA_MEASUREMENT_ID, {
-            page_title: 'Bicep Schema Builder Pro',
-            page_location: window.location.href
-        });
-        
-        window.trackEvent = function(action, category = 'User Interaction', label = '') {
-            if (typeof gtag !== 'undefined') {
-                gtag('event', action, {
-                    event_category: category,
-                    event_label: label,
-                    value: 1
-                });
-            }
-        };
-        */
     </script>
     
     <link rel="stylesheet" href="style.css">
@@ -95,19 +72,19 @@
         <!-- Navigation Tabs -->
         <nav class="main-navigation">
             <div class="nav-tabs">
-                <button class="nav-tab active" data-tab="schema-builder">
+                <button class="nav-tab active" data-tab="schema-builder" title="Open Schema Builder tab for creating and editing JSON schemas">
                     <i class="fas fa-file-code"></i>
                     <span>Schema Builder</span>
                 </button>
-                <button class="nav-tab" data-tab="arm-converter">
+                <button class="nav-tab" data-tab="arm-converter" title="Open ARM Converter tab for converting ARM templates to Bicep">
                     <i class="fas fa-exchange-alt"></i>
                     <span>ARM Converter</span>
                 </button>
-                <button class="nav-tab" data-tab="schema-validator">
+                <button class="nav-tab" data-tab="schema-validator" title="Open Schema Validator tab for validating schemas and templates">
                     <i class="fas fa-check-circle"></i>
                     <span>Schema Validator</span>
                 </button>
-                <button class="nav-tab" data-tab="templates">
+                <button class="nav-tab" data-tab="templates" title="Open Templates tab to browse and use pre-built Bicep templates">
                     <i class="fas fa-folder-open"></i>
                     <span>Templates</span>
                 </button>
@@ -143,16 +120,16 @@
                         <div class="card-header">
                             <h3><i class="fas fa-edit"></i> Schema Editor</h3>
                             <div class="editor-actions">
-                                <button id="validateBtn" class="btn btn-primary">
+                                <button id="validateBtn" class="btn btn-primary" title="Validate the JSON schema using AJV validator">
                                     <i class="fas fa-check"></i> Validate
                                 </button>
-                                <button id="formatBtn" class="btn btn-secondary">
+                                <button id="formatBtn" class="btn btn-secondary" title="Format and prettify the JSON schema code">
                                     <i class="fas fa-magic"></i> Format
                                 </button>
-                                <button id="downloadBtn" class="btn btn-success">
+                                <button id="downloadBtn" class="btn btn-success" title="Download the current schema as a JSON file">
                                     <i class="fas fa-download"></i> Download
                                 </button>
-                                <button id="clearEditorBtn" class="btn btn-outline">
+                                <button id="clearEditorBtn" class="btn btn-outline" title="Clear all content from the schema editor">
                                     <i class="fas fa-trash"></i> Clear
                                 </button>
                             </div>
@@ -162,7 +139,8 @@
                                 <textarea id="schemaEditor" 
                                          placeholder="Paste your JSON schema here or upload a file..." 
                                          rows="20" 
-                                         spellcheck="false"></textarea>
+                                         spellcheck="false"
+                                         aria-label="JSON Schema Editor - Enter or paste your JSON schema content here"></textarea>
                             </div>
                         </div>
                     </section>
@@ -190,10 +168,10 @@
                     </div>
                     <div class="card-content">
                         <div class="export-buttons">
-                            <button id="exportYaml" class="btn btn-info">
+                            <button id="exportYaml" class="btn btn-info" title="Export the current schema as YAML format">
                                 <i class="fas fa-file-code"></i> Export as YAML
                             </button>
-                            <button id="exportBicep" class="btn btn-warning">
+                            <button id="exportBicep" class="btn btn-warning" title="Export the current schema as Bicep template">
                                 <i class="fas fa-code"></i> Export as Bicep
                             </button>
                         </div>
@@ -219,12 +197,13 @@
                                 <textarea id="armTemplateInput" 
                                          placeholder="Paste your ARM template JSON here..." 
                                          rows="15" 
-                                         spellcheck="false"></textarea>
+                                         spellcheck="false"
+                                         aria-label="ARM Template Input - Enter or paste your ARM template JSON here for conversion to Bicep"></textarea>
                                 <div class="converter-actions">
-                                    <button id="analyzeArmBtn" class="btn btn-primary">
+                                    <button id="analyzeArmBtn" class="btn btn-primary" title="Analyze the ARM template to identify resources and dependencies">
                                         <i class="fas fa-search"></i> Analyze Template
                                     </button>
-                                    <button id="convertToBicepBtn" class="btn btn-success" disabled>
+                                    <button id="convertToBicepBtn" class="btn btn-success" disabled title="Convert the analyzed ARM template to Bicep format with configuration options">
                                         <i class="fas fa-exchange-alt"></i> Convert to Bicep
                                     </button>
                                 </div>
@@ -238,8 +217,8 @@
                             </div>
                             <div class="card-content">
                                 <div class="config-group">
-                                    <label><i class="fas fa-map-marker-alt"></i> Target Location:</label>
-                                    <select id="targetLocation" class="form-select">
+                                    <label for="targetLocation"><i class="fas fa-map-marker-alt"></i> Target Location:</label>
+                                    <select id="targetLocation" class="form-select" title="Select the Azure region for resource deployment" aria-label="Target Azure region for deployment">
                                         <option value="eastus">East US</option>
                                         <option value="westus2">West US 2</option>
                                         <option value="centralus">Central US</option>
@@ -263,29 +242,56 @@
                                     </div>
                                     
                                     <div id="createNetworkConfig" class="network-config">
-                                        <input type="text" id="vnetAddressSpace" 
+                                        <label for="vnetAddressSpace" class="form-label">
+                                            <i class="fas fa-network-wired"></i> Virtual Network Address Space
+                                        </label>
+                                        <input type="text" id="vnetAddressSpace" name="vnetAddressSpace"
                                                placeholder="VNet Address (e.g., 10.0.0.0/16)" 
                                                value="10.0.0.0/16" 
-                                               class="form-input">
-                                        <input type="text" id="subnetAddressSpace" 
+                                               class="form-input"
+                                               aria-describedby="vnetAddressSpaceHelp">
+                                        <small id="vnetAddressSpaceHelp" class="form-help">Enter the address space for the virtual network in CIDR notation</small>
+                                        
+                                        <label for="subnetAddressSpace" class="form-label">
+                                            <i class="fas fa-sitemap"></i> Subnet Address Space
+                                        </label>
+                                        <input type="text" id="subnetAddressSpace" name="subnetAddressSpace"
                                                placeholder="Subnet Address (e.g., 10.0.1.0/24)" 
                                                value="10.0.1.0/24" 
-                                               class="form-input">
+                                               class="form-input"
+                                               aria-describedby="subnetAddressSpaceHelp">
+                                        <small id="subnetAddressSpaceHelp" class="form-help">Enter the address space for the subnet in CIDR notation</small>
                                     </div>
                                     
                                     <div id="existingNetworkConfig" class="network-config" style="display: none;">
                                         <div class="existing-network-inputs">
-                                            <input type="text" id="existingVnetName" 
+                                            <label for="existingVnetName" class="form-label">
+                                                <i class="fas fa-network-wired"></i> Existing Virtual Network Name
+                                            </label>
+                                            <input type="text" id="existingVnetName" name="existingVnetName"
                                                    placeholder="Existing VNet Name (e.g., myapp-vnet)" 
-                                                   class="form-input">
-                                            <input type="text" id="existingSubnetName" 
+                                                   class="form-input"
+                                                   aria-describedby="existingVnetNameHelp">
+                                            <small id="existingVnetNameHelp" class="form-help">Enter the name of your existing virtual network</small>
+                                            
+                                            <label for="existingSubnetName" class="form-label">
+                                                <i class="fas fa-sitemap"></i> Existing Subnet Name
+                                            </label>
+                                            <input type="text" id="existingSubnetName" name="existingSubnetName"
                                                    placeholder="Existing Subnet Name (e.g., default)" 
-                                                   class="form-input">
+                                                   class="form-input"
+                                                   aria-describedby="existingSubnetNameHelp">
+                                            <small id="existingSubnetNameHelp" class="form-help">Enter the name of your existing subnet</small>
                                         </div>
                                         <div class="resource-group-input">
-                                            <input type="text" id="existingVnetResourceGroup" 
+                                            <label for="existingVnetResourceGroup" class="form-label">
+                                                <i class="fas fa-layer-group"></i> Virtual Network Resource Group
+                                            </label>
+                                            <input type="text" id="existingVnetResourceGroup" name="existingVnetResourceGroup"
                                                    placeholder="VNet Resource Group (leave empty if same RG)" 
-                                                   class="form-input">
+                                                   class="form-input"
+                                                   aria-describedby="existingVnetResourceGroupHelp">
+                                            <small id="existingVnetResourceGroupHelp" class="form-help">Enter the resource group containing the VNet (optional if same as deployment RG)</small>
                                         </div>
                                         <div class="network-helper">
                                             <small><i class="fas fa-lightbulb"></i> Tip: You can find VNet and subnet names in the Azure Portal under Virtual Networks</small>
@@ -296,13 +302,15 @@
                                 <div class="config-group">
                                     <label><i class="fas fa-server"></i> VM Configuration:</label>
                                     <div class="vm-config">
-                                        <select id="vmSize" class="form-select">
+                                        <label for="vmSize" class="sr-only">Virtual Machine Size</label>
+                                        <select id="vmSize" class="form-select" title="Select virtual machine size and specifications" aria-label="Virtual machine size selection">
                                             <option value="Standard_B2s">Standard_B2s (2 vCPU, 4 GB RAM)</option>
                                             <option value="Standard_D2s_v3">Standard_D2s_v3 (2 vCPU, 8 GB RAM)</option>
                                             <option value="Standard_D4s_v3" selected>Standard_D4s_v3 (4 vCPU, 16 GB RAM)</option>
                                             <option value="Standard_D8s_v3">Standard_D8s_v3 (8 vCPU, 32 GB RAM)</option>
                                         </select>
-                                        <select id="osType" class="form-select">
+                                        <label for="osType" class="sr-only">Operating System Type</label>
+                                        <select id="osType" class="form-select" title="Select operating system type for the virtual machine" aria-label="Operating system type selection">
                                             <option value="Linux">Linux</option>
                                             <option value="Windows">Windows</option>
                                         </select>
@@ -313,17 +321,17 @@
                                     <label><i class="fas fa-tools"></i> Additional Options:</label>
                                     <div class="additional-options">
                                         <label class="checkbox-option">
-                                            <input type="checkbox" id="includePublicIP" checked>
+                                            <input type="checkbox" id="includePublicIP" name="includePublicIP" checked>
                                             <span class="checkmark"></span>
                                             <span>Include Public IP</span>
                                         </label>
                                         <label class="checkbox-option">
-                                            <input type="checkbox" id="includeNSG" checked>
+                                            <input type="checkbox" id="includeNSG" name="includeNSG" checked>
                                             <span class="checkmark"></span>
                                             <span>Include Network Security Group</span>
                                         </label>
                                         <label class="checkbox-option">
-                                            <input type="checkbox" id="includeBootDiagnostics" checked>
+                                            <input type="checkbox" id="includeBootDiagnostics" name="includeBootDiagnostics" checked>
                                             <span class="checkmark"></span>
                                             <span>Include Boot Diagnostics</span>
                                         </label>
@@ -348,16 +356,16 @@
                         <div class="card-header">
                             <h3><i class="fas fa-code"></i> Generated Bicep Template</h3>
                             <div class="output-actions">
-                                <button id="copyBicepBtn" class="btn btn-outline">
+                                <button id="copyBicepBtn" class="btn btn-outline" title="Copy the generated Bicep template to clipboard">
                                     <i class="fas fa-copy"></i> Copy
                                 </button>
-                                <button id="downloadBicepBtn" class="btn btn-primary">
+                                <button id="downloadBicepBtn" class="btn btn-primary" title="Download the generated Bicep template as a .bicep file">
                                     <i class="fas fa-download"></i> Download
                                 </button>
                             </div>
                         </div>
                         <div class="card-content">
-                            <textarea id="bicepOutput" readonly rows="20" spellcheck="false"></textarea>
+                            <textarea id="bicepOutput" readonly rows="20" spellcheck="false" aria-label="Generated Bicep Template Output - Read-only output of the converted Bicep template"></textarea>
                         </div>
                     </section>
                 </div>
@@ -400,14 +408,14 @@
                                 <span id="helpText">Paste a resource schema JSON or click a template below to get started</span>
                             </div>
                             
-                            <textarea id="codeInput" placeholder="Paste your JSON schema, ARM template, or Bicep code here..." rows="15"></textarea>
+                            <textarea id="codeInput" placeholder="Paste your JSON schema, ARM template, or Bicep code here..." rows="15" aria-label="Code Input Editor - Enter code for validation in the selected mode (resource schema, ARM template, or Bicep)"></textarea>
                             
                             <div class="editor-actions">
-                                <button id="validatorValidateBtn" class="btn btn-primary">✅ Validate</button>
-                                <button id="validatorFormatBtn" class="btn btn-secondary">✨ Format Code</button>
-                                <button id="runTestSuiteBtn" class="btn btn-success">🧪 Run Test Suite</button>
-                                <button id="loadSampleBtn" class="btn btn-info">📄 Load Sample</button>
-                                <button id="validatorClearBtn" class="btn btn-warning">🗑️ Clear Editor</button>
+                                <button id="validatorValidateBtn" class="btn btn-primary" title="Validate the code using the selected validation mode">✅ Validate</button>
+                                <button id="validatorFormatBtn" class="btn btn-secondary" title="Format and prettify the code">✨ Format Code</button>
+                                <button id="runTestSuiteBtn" class="btn btn-success" title="Run comprehensive test suite with multiple validation scenarios">🧪 Run Test Suite</button>
+                                <button id="loadSampleBtn" class="btn btn-info" title="Load a sample schema or template for testing">📄 Load Sample</button>
+                                <button id="validatorClearBtn" class="btn btn-warning" title="Clear all content from the code editor">🗑️ Clear Editor</button>
                             </div>
                         </div>
                     </section>
@@ -505,32 +513,32 @@
                                 <h4>🎯 Select Resources for Deployment</h4>
                                 <div class="resource-checkboxes">
                                     <label class="resource-checkbox">
-                                        <input type="checkbox" value="storage" data-schema="storageAccount">
+                                        <input type="checkbox" name="resourceSelection" value="storage" data-schema="storageAccount">
                                         <span class="checkmark">🗄️</span>
                                         <span class="resource-name">Storage Account</span>
                                     </label>
                                     <label class="resource-checkbox">
-                                        <input type="checkbox" value="webapp" data-schema="webApp">
+                                        <input type="checkbox" name="resourceSelection" value="webapp" data-schema="webApp">
                                         <span class="checkmark">🌐</span>
                                         <span class="resource-name">Web App</span>
                                     </label>
                                     <label class="resource-checkbox">
-                                        <input type="checkbox" value="vm" data-schema="virtualMachine">
+                                        <input type="checkbox" name="resourceSelection" value="vm" data-schema="virtualMachine">
                                         <span class="checkmark">💻</span>
                                         <span class="resource-name">Virtual Machine</span>
                                     </label>
                                     <label class="resource-checkbox">
-                                        <input type="checkbox" value="keyvault" data-schema="keyVault">
+                                        <input type="checkbox" name="resourceSelection" value="keyvault" data-schema="keyVault">
                                         <span class="checkmark">🔐</span>
                                         <span class="resource-name">Key Vault</span>
                                     </label>
                                     <label class="resource-checkbox">
-                                        <input type="checkbox" value="sqldatabase" data-schema="sqlDatabase">
+                                        <input type="checkbox" name="resourceSelection" value="sqldatabase" data-schema="sqlDatabase">
                                         <span class="checkmark">🗃️</span>
                                         <span class="resource-name">SQL Database</span>
                                     </label>
                                     <label class="resource-checkbox">
-                                        <input type="checkbox" value="functions" data-schema="azureFunctions">
+                                        <input type="checkbox" name="resourceSelection" value="functions" data-schema="azureFunctions">
                                         <span class="checkmark">⚡</span>
                                         <span class="resource-name">Azure Functions</span>
                                     </label>
@@ -539,29 +547,29 @@
                                 <div class="deployment-options">
                                     <h4>⚙️ Deployment Options</h4>
                                     <label class="option-checkbox">
-                                        <input type="checkbox" id="includeParameters" checked>
+                                        <input type="checkbox" id="includeParameters" name="includeParameters" checked>
                                         <span>Include Parameter Files</span>
                                     </label>
                                     <label class="option-checkbox">
-                                        <input type="checkbox" id="includeDependencies" checked>
+                                        <input type="checkbox" id="includeDependencies" name="includeDependencies" checked>
                                         <span>Auto-detect Dependencies</span>
                                     </label>
                                     <label class="option-checkbox">
-                                        <input type="checkbox" id="includeOutputs" checked>
+                                        <input type="checkbox" id="includeOutputs" name="includeOutputs" checked>
                                         <span>Include Resource Outputs</span>
                                     </label>
                                     <label class="option-checkbox">
-                                        <input type="checkbox" id="generateModules">
+                                        <input type="checkbox" id="generateModules" name="generateModules">
                                         <span>Generate as Modules</span>
                                     </label>
                                 </div>
                                 
                                 <div class="deployment-actions">
-                                    <button id="validateAllResources" class="btn btn-primary">🔍 Validate All</button>
-                                    <button id="configureResources" class="btn btn-secondary">⚙️ Configure Resources</button>
-                                    <button id="previewDeployment" class="btn btn-info">👁️ Preview Deployment</button>
-                                    <button id="exportSelectedBicep" class="btn btn-success">📦 Export Selected Resources</button>
-                                    <button id="downloadDeploymentPackage" class="btn btn-warning">⬇️ Download Package</button>
+                                    <button id="validateAllResources" class="btn btn-primary" title="Validate all selected resources for compatibility and dependencies">🔍 Validate All</button>
+                                    <button id="configureResources" class="btn btn-secondary" title="Open configuration modal to customize selected resources">⚙️ Configure Resources</button>
+                                    <button id="previewDeployment" class="btn btn-info" title="Preview the deployment template before exporting">👁️ Preview Deployment</button>
+                                    <button id="exportSelectedBicep" class="btn btn-success" title="Export selected resources as Bicep template files">📦 Export Selected Resources</button>
+                                    <button id="downloadDeploymentPackage" class="btn btn-warning" title="Download complete deployment package with templates and parameters">⬇️ Download Package</button>
                                 </div>
                                 
                                 <div id="selectedResourcesPreview" class="selected-preview">
@@ -580,7 +588,7 @@
             <div class="modal-content">
                 <div class="modal-header">
                     <h3 id="configModalTitle">Configure Resources</h3>
-                    <button id="closeConfigModal" class="close-btn">✕</button>
+                    <button id="closeConfigModal" class="close-btn" title="Close configuration modal">✕</button>
                 </div>
                 <div class="modal-body">
                     <div class="config-tabs">
@@ -589,7 +597,7 @@
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button id="resetConfig" class="secondary-btn">🔄 Reset to Defaults</button>
+                    <button id="resetConfig" class="secondary-btn" title="Reset all configuration options to their default values">🔄 Reset to Defaults</button>
                 </div>
             </div>
         </div>
@@ -614,39 +622,18 @@
     <script src="utils/schemaParser.js" onerror="console.warn('schemaParser.js not found - using placeholder')"></script>
     <script src="utils/azureResourceGraph.js" onerror="console.warn('azureResourceGraph.js not found - using placeholder')"></script>
     <script>
-        // Theme Toggle Functionality
+        // Theme initialization on page load
         document.addEventListener('DOMContentLoaded', function() {
-            const themeToggle = document.getElementById('theme-toggle');
-            const themeIcon = document.querySelector('#theme-toggle i');
-            const body = document.body;
-            
             // Load saved theme
-            const savedTheme = localStorage.getItem('theme');
+            const savedTheme = localStorage.getItem('bicep-builder-theme');
             if (savedTheme === 'dark') {
-                body.classList.add('dark-theme');
-                themeIcon.classList.remove('fa-moon');
-                themeIcon.classList.add('fa-sun');
-            }
-            
-            themeToggle.addEventListener('click', function() {
-                body.classList.toggle('dark-theme');
-                
-                // Update icon
-                if (body.classList.contains('dark-theme')) {
+                document.body.classList.add('dark-theme');
+                const themeIcon = document.querySelector('#themeToggle i');
+                if (themeIcon) {
                     themeIcon.classList.remove('fa-moon');
                     themeIcon.classList.add('fa-sun');
-                    localStorage.setItem('theme', 'dark');
-                } else {
-                    themeIcon.classList.remove('fa-sun');
-                    themeIcon.classList.add('fa-moon');
-                    localStorage.setItem('theme', 'light');
                 }
-                
-                // Track theme change event
-                if (typeof window.trackEvent === 'function') {
-                    window.trackEvent('theme_toggle', 'UI Interaction', body.classList.contains('dark-theme') ? 'dark' : 'light');
-                }
-            });
+            }
         });
     </script>
     <script src="script.js"></script>

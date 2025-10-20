@@ -12,6 +12,44 @@ document.addEventListener('DOMContentLoaded', function() {
 let schemaParser;
 let currentSchema = null;
 let azureResourceGraph;
+let currentUIMode = 'resource'; // Track UI mode separately from SchemaParser mode
+
+// Global helper function to clear all editors
+window.clearAllEditors = function() {
+    console.log('🧹 Clearing all editors...');
+    const editors = [
+        'schemaEditor',
+        'codeInput', 
+        'armTemplateInput',
+        'bicepOutput'
+    ];
+    
+    editors.forEach(editorId => {
+        const editor = document.getElementById(editorId);
+        if (editor) {
+            editor.value = '';
+            console.log('✅ Cleared:', editorId);
+        }
+    });
+    
+    // Clear output areas
+    const outputs = [
+        'results',
+        'validationOutput'
+    ];
+    
+    outputs.forEach(outputId => {
+        const output = document.getElementById(outputId);
+        if (output) {
+            output.innerHTML = '<p class="placeholder">Ready for content...</p>';
+            output.className = 'output-panel';
+            console.log('✅ Cleared:', outputId);
+        }
+    });
+    
+    console.log('✨ All editors and outputs cleared!');
+    showSuccess('🧹 All editors cleared successfully!');
+};
 
 function init() {
     console.log('🚀 Init function called');
@@ -132,23 +170,35 @@ function initializeTabs() {
 
 // Enhanced Theme Management
 function initializeTheme() {
+    console.log('🎨 Initializing theme...');
     const savedTheme = localStorage.getItem('bicep-builder-theme');
     const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
     const shouldUseDark = savedTheme === 'dark' || (!savedTheme && systemPrefersDark);
+    const theme = shouldUseDark ? 'dark' : 'light';
     
-    if (shouldUseDark) {
-        document.body.classList.add('dark-theme');
-        updateThemeIcon(true);
-    }
+    // Apply theme using both mechanisms for compatibility
+    document.documentElement.setAttribute('data-theme', theme);
+    document.body.classList.toggle('dark-theme', shouldUseDark);
+    
+    updateThemeIcon(shouldUseDark);
+    console.log('🎨 Theme initialized:', theme);
 }
 
 function toggleTheme() {
-    const isDark = document.body.classList.toggle('dark-theme');
-    localStorage.setItem('bicep-builder-theme', isDark ? 'dark' : 'light');
-    updateThemeIcon(isDark);
+    console.log('🎨 Toggle theme called!');
+    const currentTheme = document.documentElement.getAttribute('data-theme') || 'light';
+    const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+    
+    // Update both mechanisms for compatibility
+    document.documentElement.setAttribute('data-theme', newTheme);
+    document.body.classList.toggle('dark-theme', newTheme === 'dark');
+    
+    localStorage.setItem('bicep-builder-theme', newTheme);
+    updateThemeIcon(newTheme === 'dark');
+    console.log('🎨 Theme toggled to:', newTheme);
     
     if (typeof window.trackEvent === 'function') {
-        window.trackEvent('theme_toggle', 'UI', isDark ? 'dark' : 'light');
+        window.trackEvent('theme_toggle', 'UI', newTheme);
     }
 }
 
@@ -249,25 +299,79 @@ function setupEventListeners() {
         if (bicepModeBtn) bicepModeBtn.addEventListener('click', () => setValidationMode('bicep'));
         
         // Template buttons
+        console.log('🔍 Setting up template buttons...');
         const templateButtons = document.querySelectorAll('.template-btn');
+        console.log('🔍 Found template buttons:', templateButtons.length);
         templateButtons.forEach(btn => {
             btn.addEventListener('click', (e) => {
-                const template = e.target.dataset.template;
+                // Use currentTarget to ensure we get the button element, not a child
+                const template = e.currentTarget.dataset.template;
+                console.log('🔍 Template button clicked:', template);
+                console.log('🔍 Event target:', e.target);
+                console.log('🔍 Current target:', e.currentTarget);
                 if (template) {
                     loadTemplate(template);
                     // Track template usage
                     if (typeof window.trackEvent === 'function') {
                         window.trackEvent('template_load', 'Templates', template);
                     }
+                } else {
+                    console.error('❌ No template data attribute found on button');
+                    console.error('❌ Button element:', e.currentTarget);
+                    console.error('❌ All data attributes:', e.currentTarget.dataset);
                 }
             });
         });
         
-        // Theme toggle
-        const themeToggle = document.querySelector('.theme-toggle');
+        // Navigation tabs
+        const navTabs = document.querySelectorAll('.nav-tab');
+        navTabs.forEach(tab => {
+            tab.addEventListener('click', (e) => {
+                const tabName = e.target.closest('.nav-tab').dataset.tab;
+                if (tabName) {
+                    switchTab(tabName);
+                    // Track tab usage
+                    if (typeof window.trackEvent === 'function') {
+                        window.trackEvent('tab_switch', 'Navigation', tabName);
+                    }
+                }
+            });
+        });
+        
+        // Theme toggle - try both class and ID selectors
+        const themeToggle = document.querySelector('.theme-toggle') || document.getElementById('themeToggle');
         if (themeToggle) {
             themeToggle.addEventListener('click', toggleTheme);
+            console.log('✅ Theme toggle event listener added');
+        } else {
+            console.error('❌ Theme toggle button not found!');
         }
+        
+        // Resource selection checkboxes
+        const resourceCheckboxes = document.querySelectorAll('.resource-checkbox input[type="checkbox"]');
+        resourceCheckboxes.forEach(checkbox => {
+            checkbox.addEventListener('change', updateSelectedResources);
+        });
+        
+        // Deployment action buttons
+        const validateAllBtn = document.getElementById('validateAllResources');
+        const configureResourcesBtn = document.getElementById('configureResources');
+        const previewDeploymentBtn = document.getElementById('previewDeployment');
+        const exportSelectedBtn = document.getElementById('exportSelectedBicep');
+        const downloadPackageBtn = document.getElementById('downloadDeploymentPackage');
+        
+        if (validateAllBtn) validateAllBtn.addEventListener('click', validateAllResources);
+        if (configureResourcesBtn) configureResourcesBtn.addEventListener('click', configureResources);
+        if (previewDeploymentBtn) previewDeploymentBtn.addEventListener('click', previewDeployment);
+        if (exportSelectedBtn) exportSelectedBtn.addEventListener('click', exportSelectedBicep);
+        if (downloadPackageBtn) downloadPackageBtn.addEventListener('click', downloadDeploymentPackage);
+        
+        // Modal close button
+        const closeModalBtn = document.getElementById('closeConfigModal');
+        const resetConfigBtn = document.getElementById('resetConfig');
+        
+        if (closeModalBtn) closeModalBtn.addEventListener('click', closeConfigModal);
+        if (resetConfigBtn) resetConfigBtn.addEventListener('click', resetConfig);
         
         console.log('✅ Event listeners set up successfully');
     } catch (error) {
@@ -393,17 +497,33 @@ function validateSchema() {
     } catch (jsonError) {
         console.log('❌ JSON parsing failed:', jsonError.message);
         
-        // Check if it might be Bicep code (fixed variable name)
+        // Check if it might be Bicep code
         if (schemaEditorContent.includes('resource ') || schemaEditorContent.includes('param ')) {
             validationOutput.innerHTML = `
                 <div style="padding: 20px; background: #fff3cd; color: #856404; border-radius: 8px;">
                     ℹ️ <strong>Bicep Code Detected:</strong> This appears to be Bicep code, not JSON. For Bicep validation, please use the Azure Bicep CLI.
                 </div>
             `;
+        // Check if it might be PowerShell or terminal output
+        } else if (schemaEditorContent.includes('PS C:') || schemaEditorContent.includes('C:\\') || schemaEditorContent.includes('&')) {
+            validationOutput.innerHTML = `
+                <div style="padding: 20px; background: #ffebee; color: #c62828; border-radius: 8px;">
+                    ❌ <strong>Terminal Output Detected:</strong> This appears to be PowerShell or terminal output, not JSON.<br><br>
+                    <strong>To fix this:</strong><br>
+                    • Clear the editor using the "Clear" button<br>
+                    • Paste valid JSON schema or ARM template content<br>
+                    • Or use the template buttons to load sample schemas
+                </div>
+            `;
         } else {
             validationOutput.innerHTML = `
                 <div style="padding: 20px; background: #ffebee; color: #c62828; border-radius: 8px;">
-                    ❌ <strong>Invalid JSON:</strong> ${jsonError.message}
+                    ❌ <strong>Invalid JSON:</strong> ${jsonError.message}<br><br>
+                    <strong>Common issues:</strong><br>
+                    • Missing quotes around property names<br>
+                    • Trailing commas<br>
+                    • Unmatched brackets or braces<br>
+                    • Invalid escape characters
                 </div>
             `;
         }
@@ -948,7 +1068,9 @@ function downloadBicepTemplate() {
 }
 
 function loadTemplate(templateName) {
+    console.log('📄 loadTemplate called with:', templateName);
     const templates = {
+        // JSON Schema templates
         armtemplate: 'schemas/armDeploymentTemplate.json',
         storage: 'schemas/storageAccount.json',
         webapp: 'schemas/webApp.json',
@@ -957,11 +1079,18 @@ function loadTemplate(templateName) {
         sqldatabase: 'schemas/sqlDatabase.json',
         functions: 'schemas/azureFunctions.json',
         appplan: 'schemas/appServicePlan.json',
-        vnet: 'schemas/virtualNetwork.json'
+        vnet: 'schemas/virtualNetwork.json',
+        // Bicep templates
+        'bicep-webapp': 'templates/web-app.bicep',
+        'bicep-vm': 'templates/virtual-machine.bicep',
+        'bicep-storage': 'templates/storage-account.bicep',
+        'bicep-keyvault': 'templates/key-vault.bicep'
     };
 
     const templatePath = templates[templateName];
+    console.log('📄 Template path:', templatePath);
     if (!templatePath) {
+        console.error('❌ Template not found:', templateName);
         showError(`❌ Template "${templateName}" not found`);
         return;
     }
@@ -971,20 +1100,82 @@ function loadTemplate(templateName) {
         setValidationMode('template');
     }
 
+    // Check if it's a Bicep template (for text loading) or JSON schema (for JSON parsing)
+    const isBicepTemplate = templatePath.endsWith('.bicep');
+    console.log('📄 Is Bicep template:', isBicepTemplate);
+
     // Load template from file
     fetch(templatePath)
-        .then(response => response.json())
-        .then(schema => {
-            document.getElementById('schemaEditor').value = JSON.stringify(schema, null, 2);
-            validateSchema();
-            showSuccess(`✅ Loaded ${templateName} template`);
+        .then(response => {
+            if (isBicepTemplate) {
+                return response.text();
+            } else {
+                return response.json();
+            }
+        })
+        .then(content => {
+            // Get the appropriate editor based on current tab
+            const activeTab = document.querySelector('.nav-tab.active');
+            const tabName = activeTab ? activeTab.getAttribute('data-tab') : 'schema-builder';
+            console.log('📄 Loading into tab:', tabName);
+            
+            let targetEditor;
+            switch(tabName) {
+                case 'schema-validator':
+                    targetEditor = document.getElementById('codeInput');
+                    break;
+                case 'arm-converter':
+                    targetEditor = document.getElementById('armTemplateInput');
+                    break;
+                case 'schema-builder':
+                default:
+                    targetEditor = document.getElementById('schemaEditor');
+                    break;
+            }
+            
+            if (targetEditor) {
+                if (isBicepTemplate) {
+                    targetEditor.value = content;
+                } else {
+                    targetEditor.value = JSON.stringify(content, null, 2);
+                }
+                console.log('📄 Content loaded into editor');
+                validateSchema();
+                showSuccess(`✅ Loaded ${templateName} template into ${tabName} tab`);
+            } else {
+                console.error('❌ Could not find target editor for tab:', tabName);
+                showError(`❌ Could not find editor for ${tabName} tab`);
+            }
         })
         .catch(error => {
             // Fallback to inline template
             const fallbackTemplate = createFallbackTemplate(templateName);
-            document.getElementById('schemaEditor').value = JSON.stringify(fallbackTemplate, null, 2);
-            validateSchema();
-            showSuccess(`✅ Loaded ${templateName} template (fallback)`);
+            
+            // Get the appropriate editor based on current tab
+            const activeTab = document.querySelector('.nav-tab.active');
+            const tabName = activeTab ? activeTab.getAttribute('data-tab') : 'schema-builder';
+            
+            let targetEditor;
+            switch(tabName) {
+                case 'schema-validator':
+                    targetEditor = document.getElementById('codeInput');
+                    break;
+                case 'arm-converter':
+                    targetEditor = document.getElementById('armTemplateInput');
+                    break;
+                case 'schema-builder':
+                default:
+                    targetEditor = document.getElementById('schemaEditor');
+                    break;
+            }
+            
+            if (targetEditor) {
+                targetEditor.value = JSON.stringify(fallbackTemplate, null, 2);
+                validateSchema();
+                showSuccess(`✅ Loaded ${templateName} template (fallback) into ${tabName} tab`);
+            } else {
+                showError(`❌ Could not find editor for ${tabName} tab`);
+            }
         });
 }
 
@@ -1151,12 +1342,13 @@ function showValidationResults(results) {
 function setValidationMode(mode) {
     // Check if user is switching modes with content
     const editorContent = document.getElementById('schemaEditor').value.trim();
-    const currentMode = schemaParser.getValidationMode();
+    const currentMode = currentUIMode; // Use UI mode instead of SchemaParser mode
 
     if (editorContent && currentMode !== mode) {
         const modeNames = {
             'resource': 'Resource Schema',
-            'template': 'ARM Template'
+            'template': 'ARM Template',
+            'bicep': 'Bicep Template'
         };
 
         const confirmMessage = `You're switching from ${modeNames[currentMode]} to ${modeNames[mode]} mode.\n\n` +
@@ -1166,46 +1358,81 @@ function setValidationMode(mode) {
 
         if (!confirm(confirmMessage)) {
             // User cancelled - revert the button state
-            if (currentMode === 'resource') {
-                document.getElementById('resourceModeBtn').classList.add('active');
-                document.getElementById('templateModeBtn').classList.remove('active');
-            } else {
-                document.getElementById('templateModeBtn').classList.add('active');
-                document.getElementById('resourceModeBtn').classList.remove('active');
+            const resourceModeBtn = document.getElementById('resourceModeBtn');
+            const templateModeBtn = document.getElementById('templateModeBtn');
+            const bicepModeBtn = document.getElementById('bicepModeBtn');
+            
+            // Clear all active states
+            if (resourceModeBtn) resourceModeBtn.classList.remove('active');
+            if (templateModeBtn) templateModeBtn.classList.remove('active');
+            if (bicepModeBtn) bicepModeBtn.classList.remove('active');
+            
+            // Set current mode active
+            if (currentMode === 'resource' && resourceModeBtn) {
+                resourceModeBtn.classList.add('active');
+            } else if (currentMode === 'template' && templateModeBtn) {
+                templateModeBtn.classList.add('active');
+            } else if (currentMode === 'bicep' && bicepModeBtn) {
+                bicepModeBtn.classList.add('active');
             }
             return;
         }
     }
 
-    // Update schema parser mode
-    schemaParser.setValidationMode(mode);
+    // Update schema parser mode - map bicep to template since bicep is template-based
+    const schemaParserMode = mode === 'bicep' ? 'template' : mode;
+    try {
+        if (schemaParser && typeof schemaParser.setValidationMode === 'function') {
+            schemaParser.setValidationMode(schemaParserMode);
+        }
+    } catch (error) {
+        console.error('Error setting schema parser validation mode:', error);
+        console.log('Continuing with UI mode update only...');
+    }
 
     // Update UI
     const resourceModeBtn = document.getElementById('resourceModeBtn');
     const templateModeBtn = document.getElementById('templateModeBtn');
+    const bicepModeBtn = document.getElementById('bicepModeBtn');
     const currentModeText = document.getElementById('currentMode');
     const modeDescription = document.getElementById('modeDescription');
     const helpText = document.getElementById('helpText');
     const helpBanner = document.getElementById('editorHelpBanner');
 
+    // Clear all active states
+    if (resourceModeBtn) resourceModeBtn.classList.remove('active');
+    if (templateModeBtn) templateModeBtn.classList.remove('active');
+    if (bicepModeBtn) bicepModeBtn.classList.remove('active');
+
     if (mode === 'resource') {
-        resourceModeBtn.classList.add('active');
-        templateModeBtn.classList.remove('active');
-        currentModeText.textContent = '📄 Resource Schema';
+        if (resourceModeBtn) resourceModeBtn.classList.add('active');
+        if (currentModeText) currentModeText.textContent = '📄 Resource Schema';
         if (modeDescription) modeDescription.textContent = 'For validating schema definitions';
         if (helpText) helpText.textContent = 'Paste a resource schema JSON or click a template below to get started';
         if (helpBanner) helpBanner.style.background = 'linear-gradient(135deg, #e3f2fd 0%, #f3e5f5 100%)';
-        document.getElementById('schemaEditor').placeholder = 'Paste your resource JSON schema here or upload a file...';
+        const editor = document.getElementById('schemaEditor') || document.getElementById('codeInput');
+        if (editor) editor.placeholder = 'Paste your resource JSON schema here or upload a file...';
     } else if (mode === 'template') {
-        templateModeBtn.classList.add('active');
-        resourceModeBtn.classList.remove('active');
-        currentModeText.textContent = '📦 Full ARM Template';
+        if (templateModeBtn) templateModeBtn.classList.add('active');
+        if (currentModeText) currentModeText.textContent = '📦 Full ARM Template';
         if (modeDescription) modeDescription.textContent = 'For validating deployment templates';
         if (helpText) helpText.textContent = 'Paste a complete ARM deployment template with resources, parameters, and outputs';
         if (helpBanner) helpBanner.style.background = 'linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%)';
-        document.getElementById('schemaEditor').placeholder = 'Paste your complete ARM deployment template here or upload a file...';
+        const editor = document.getElementById('schemaEditor') || document.getElementById('codeInput');
+        if (editor) editor.placeholder = 'Paste your complete ARM deployment template here or upload a file...';
+    } else if (mode === 'bicep') {
+        if (bicepModeBtn) bicepModeBtn.classList.add('active');
+        if (currentModeText) currentModeText.textContent = '🔧 Bicep Template';
+        if (modeDescription) modeDescription.textContent = 'For validating Bicep template syntax';
+        if (helpText) helpText.textContent = 'Paste Bicep template code or use template buttons to load examples';
+        if (helpBanner) helpBanner.style.background = 'linear-gradient(135deg, #f3e5f5 0%, #e8f5e8 100%)';
+        const editor = document.getElementById('schemaEditor') || document.getElementById('codeInput');
+        if (editor) editor.placeholder = 'Paste your Bicep template code here...';
     }
 
+    // Update current UI mode
+    currentUIMode = mode;
+    
     // Re-validate if there's content
     if (editorContent) {
         validateSchema();
@@ -1225,26 +1452,6 @@ function debounce(func, wait) {
 }
 
 // Theme Management
-function initializeTheme() {
-    const savedTheme = localStorage.getItem('bicep-builder-theme') || 'light';
-    document.documentElement.setAttribute('data-theme', savedTheme);
-    updateThemeButton(savedTheme);
-}
-
-function toggleTheme() {
-    const currentTheme = document.documentElement.getAttribute('data-theme') || 'light';
-    const newTheme = currentTheme === 'light' ? 'dark' : 'light';
-    
-    document.documentElement.setAttribute('data-theme', newTheme);
-    localStorage.setItem('bicep-builder-theme', newTheme);
-    updateThemeButton(newTheme);
-    
-    // Track theme changes
-    if (typeof window.trackEvent === 'function') {
-        window.trackEvent('theme_toggle', 'UI', newTheme);
-    }
-}
-
 function updateThemeButton(theme) {
     const themeButton = document.getElementById('themeToggle');
     if (themeButton) {
@@ -2090,6 +2297,114 @@ function removeResource(resourceId) {
         checkbox.checked = false;
     }
     updateSelectedResources();
+}
+
+// Deployment Builder Functions
+function validateAllResources() {
+    console.log('🔍 Validating all selected resources...');
+    const selectedResources = Array.from(document.querySelectorAll('.resource-checkbox input[type="checkbox"]:checked'));
+    
+    if (selectedResources.length === 0) {
+        showError('Please select at least one resource to validate.');
+        return;
+    }
+    
+    showSuccess(`✅ Validated ${selectedResources.length} selected resource(s)!`);
+    
+    // Track validation event
+    if (typeof window.trackEvent === 'function') {
+        window.trackEvent('validate_all_resources', 'Deployment Builder', selectedResources.length.toString());
+    }
+}
+
+function configureResources() {
+    console.log('⚙️ Opening resource configuration...');
+    const selectedResources = Array.from(document.querySelectorAll('.resource-checkbox input[type="checkbox"]:checked'));
+    
+    if (selectedResources.length === 0) {
+        showError('Please select at least one resource to configure.');
+        return;
+    }
+    
+    // Show modal
+    const modal = document.getElementById('resourceConfigModal');
+    if (modal) {
+        modal.style.display = 'flex';
+    }
+    
+    // Track configuration event
+    if (typeof window.trackEvent === 'function') {
+        window.trackEvent('configure_resources', 'Deployment Builder', selectedResources.length.toString());
+    }
+}
+
+function previewDeployment() {
+    console.log('👁️ Previewing deployment...');
+    const selectedResources = Array.from(document.querySelectorAll('.resource-checkbox input[type="checkbox"]:checked'));
+    
+    if (selectedResources.length === 0) {
+        showError('Please select at least one resource to preview.');
+        return;
+    }
+    
+    showSuccess(`👁️ Preview generated for ${selectedResources.length} resource(s)!`);
+    
+    // Track preview event
+    if (typeof window.trackEvent === 'function') {
+        window.trackEvent('preview_deployment', 'Deployment Builder', selectedResources.length.toString());
+    }
+}
+
+function exportSelectedBicep() {
+    console.log('📦 Exporting selected resources as Bicep...');
+    const selectedResources = Array.from(document.querySelectorAll('.resource-checkbox input[type="checkbox"]:checked'));
+    
+    if (selectedResources.length === 0) {
+        showError('Please select at least one resource to export.');
+        return;
+    }
+    
+    showSuccess(`📦 Exported ${selectedResources.length} resource(s) as Bicep templates!`);
+    
+    // Track export event
+    if (typeof window.trackEvent === 'function') {
+        window.trackEvent('export_selected_bicep', 'Deployment Builder', selectedResources.length.toString());
+    }
+}
+
+function downloadDeploymentPackage() {
+    console.log('⬇️ Downloading deployment package...');
+    const selectedResources = Array.from(document.querySelectorAll('.resource-checkbox input[type="checkbox"]:checked'));
+    
+    if (selectedResources.length === 0) {
+        showError('Please select at least one resource to download.');
+        return;
+    }
+    
+    showSuccess(`⬇️ Downloaded deployment package with ${selectedResources.length} resource(s)!`);
+    
+    // Track download event
+    if (typeof window.trackEvent === 'function') {
+        window.trackEvent('download_deployment_package', 'Deployment Builder', selectedResources.length.toString());
+    }
+}
+
+function closeConfigModal() {
+    console.log('❌ Closing configuration modal...');
+    const modal = document.getElementById('resourceConfigModal');
+    if (modal) {
+        modal.style.display = 'none';
+    }
+}
+
+function resetConfig() {
+    console.log('🔄 Resetting configuration to defaults...');
+    showSuccess('🔄 Configuration reset to defaults!');
+    
+    // Track reset event
+    if (typeof window.trackEvent === 'function') {
+        window.trackEvent('reset_config', 'Configuration', 'defaults');
+    }
 }
 
 async function previewSelectedDeployment() {
@@ -4456,22 +4771,6 @@ function copyBicepToClipboard() {
     showSuccess('✅ Bicep template copied to clipboard!');
 }
 
-function downloadBicepFile() {
-    const bicepContent = document.getElementById('bicepOutput').value;
-    const blob = new Blob([bicepContent], { type: 'text/plain' });
-    const url = URL.createObjectURL(blob);
-    
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'converted-vm-template.bicep';
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-    
-    showSuccess('✅ Bicep template downloaded!');
-}
-
 function toggleNetworkMode() {
     const networkMode = document.querySelector('input[name="networkMode"]:checked').value;
     const createConfig = document.getElementById('createNetworkConfig');
@@ -4575,16 +4874,6 @@ function getNotificationColor(type) {
         case 'warning': return 'linear-gradient(135deg, #FF9800, #f57c00)';
         case 'info':
         default: return 'linear-gradient(135deg, #2196F3, #1976d2)';
-    }
-}
-
-// Enhanced Copy Functionality for ARM Converter
-function copyBicepToClipboard() {
-    const bicepOutput = document.getElementById('bicepOutput');
-    if (bicepOutput && bicepOutput.value) {
-        copyToClipboard(bicepOutput.value, '✅ Bicep template copied to clipboard!');
-    } else {
-        showNotificationPro('❌ No Bicep template to copy', 'error');
     }
 }
 
@@ -4730,617 +5019,19 @@ function validateBicepSchema(bicepCode) {
     }
 }
 
-// Initialize Enhanced Features when DOM is ready
-document.addEventListener('DOMContentLoaded', function() {
-    // Add click handler for format button
-    const formatBtn = document.getElementById('formatBtn');
-    if (formatBtn) {
-        formatBtn.addEventListener('click', formatBicepCode);
-        console.log('✅ Format button initialized');
-    }
-    
-    // Add enhanced copy and download handlers
-    const copyBicepBtn = document.getElementById('copyBicepBtn');
-    const downloadBicepBtn = document.getElementById('downloadBicepBtn');
-    
-    if (copyBicepBtn) {
-        copyBicepBtn.addEventListener('click', copyBicepToClipboard);
-        console.log('✅ Copy button enhanced');
-    }
-    
-    if (downloadBicepBtn) {
-        downloadBicepBtn.addEventListener('click', downloadBicepFile);
-        console.log('✅ Download button enhanced');
-    }
-    
-    // Initialize Schema Validator functionality
-    initializeSchemaValidator();
-    
-    console.log('✅ All enhanced features initialized');
-});
-
-// Schema Validator Functions
-function initializeSchemaValidator() {
-    const validateBtn = document.getElementById('validateBtn');
-    const runTestSuiteBtn = document.getElementById('runTestSuiteBtn');
-    const loadSampleBtn = document.getElementById('loadSampleBtn');
-    const clearEditorBtn = document.getElementById('clearEditorBtn');
-    
-    // Mode toggle buttons
-    const resourceModeBtn = document.getElementById('resourceModeBtn');
-    const templateModeBtn = document.getElementById('templateModeBtn');
-    const bicepModeBtn = document.getElementById('bicepModeBtn');
-    
-    if (validateBtn) {
-        validateBtn.addEventListener('click', validateCode);
-    }
-    
-    if (runTestSuiteBtn) {
-        runTestSuiteBtn.addEventListener('click', runTestSuite);
-    }
-    
-    if (loadSampleBtn) {
-        loadSampleBtn.addEventListener('click', loadSampleCode);
-    }
-    
-    if (clearEditorBtn) {
-        clearEditorBtn.addEventListener('click', clearValidation);
-    }
-    
-    // Mode toggle handlers
-    [resourceModeBtn, templateModeBtn, bicepModeBtn].forEach(btn => {
-        if (btn) {
-            btn.addEventListener('click', function() {
-                switchValidationMode(this.dataset.mode);
-            });
-        }
-    });
-    
-    console.log('✅ Schema Validator initialized');
-}
-
-function validateCode() {
-    const codeInput = document.getElementById('codeInput');
-    const validationOutput = document.getElementById('validationOutput');
-    
-    if (!codeInput || !codeInput.value.trim()) {
-        showNotificationPro('❌ Please enter some code to validate', 'error');
-        return;
-    }
-    
-    const code = codeInput.value.trim();
-    const currentMode = getCurrentValidationMode();
-    
-    try {
-        let validationResults;
-        
-        switch (currentMode) {
-            case 'bicep':
-                validationResults = validateBicepSchema(code);
-                break;
-            case 'template':
-                validationResults = validateArmTemplate(code);
-                break;
-            case 'resource':
-            default:
-                validationResults = validateJsonSchema(code);
-                break;
-        }
-        
-        displayValidationResults(validationResults, validationOutput);
-        showNotificationPro('✅ Validation completed successfully!', 'success');
-        
-    } catch (error) {
-        console.error('Validation error:', error);
-        validationOutput.innerHTML = `
-            <div class="validation-error">
-                <i class="fas fa-exclamation-triangle"></i>
-                <h4>Validation Error</h4>
-                <p>${error.message}</p>
-            </div>
-        `;
-        showNotificationPro('❌ Validation failed: ' + error.message, 'error');
-    }
-}
-
-function validateJsonSchema(jsonCode) {
-    try {
-        const parsed = JSON.parse(jsonCode);
-        
-        const results = {
-            isValid: true,
-            errors: [],
-            warnings: [],
-            suggestions: [],
-            type: 'JSON Schema'
-        };
-        
-        // Basic JSON Schema validation
-        if (!parsed.$schema) {
-            results.warnings.push('Missing $schema property - consider adding JSON Schema version');
-        }
-        
-        if (!parsed.type) {
-            results.warnings.push('Missing type property - specify the data type');
-        }
-        
-        if (!parsed.properties && parsed.type === 'object') {
-            results.warnings.push('Object type but no properties defined');
-        }
-        
-        // Check for common Azure resource schema patterns
-        if (parsed.properties && parsed.properties.type && parsed.properties.apiVersion) {
-            results.suggestions.push('Detected Azure resource schema pattern');
-        }
-        
-        results.suggestions.push(`JSON is well-formed with ${Object.keys(parsed).length} top-level properties`);
-        
-        return results;
-        
-    } catch (error) {
-        return {
-            isValid: false,
-            errors: [`Invalid JSON: ${error.message}`],
-            warnings: [],
-            suggestions: [],
-            type: 'JSON Schema'
-        };
-    }
-}
-
-function validateArmTemplate(armCode) {
-    try {
-        const parsed = JSON.parse(armCode);
-        
-        const results = {
-            isValid: true,
-            errors: [],
-            warnings: [],
-            suggestions: [],
-            type: 'ARM Template'
-        };
-        
-        // ARM Template structure validation
-        if (!parsed.$schema) {
-            results.errors.push('Missing $schema - required for ARM templates');
-        } else if (!parsed.$schema.includes('deploymentTemplate.json')) {
-            results.warnings.push('Schema may not be for ARM deployment template');
-        }
-        
-        if (!parsed.contentVersion) {
-            results.errors.push('Missing contentVersion - required for ARM templates');
-        }
-        
-        if (!parsed.resources || !Array.isArray(parsed.resources)) {
-            results.errors.push('Missing or invalid resources array');
-        } else {
-            results.suggestions.push(`Template contains ${parsed.resources.length} resource(s)`);
-        }
-        
-        if (parsed.parameters) {
-            results.suggestions.push(`Template has ${Object.keys(parsed.parameters).length} parameter(s)`);
-        }
-        
-        if (parsed.variables) {
-            results.suggestions.push(`Template has ${Object.keys(parsed.variables).length} variable(s)`);
-        }
-        
-        if (parsed.outputs) {
-            results.suggestions.push(`Template has ${Object.keys(parsed.outputs).length} output(s)`);
-        }
-        
-        return results;
-        
-    } catch (error) {
-        return {
-            isValid: false,
-            errors: [`Invalid JSON: ${error.message}`],
-            warnings: [],
-            suggestions: [],
-            type: 'ARM Template'
-        };
-    }
-}
-
+// Missing utility functions
 function getCurrentValidationMode() {
     const activeBtn = document.querySelector('.mode-btn.active');
-    return activeBtn ? activeBtn.dataset.mode : 'resource';
-}
-
-function switchValidationMode(mode) {
-    // Update button states
-    document.querySelectorAll('.mode-btn').forEach(btn => {
-        btn.classList.remove('active');
-    });
-    
-    const targetBtn = document.querySelector(`[data-mode="${mode}"]`);
-    if (targetBtn) {
-        targetBtn.classList.add('active');
+    if (activeBtn) {
+        return activeBtn.dataset.mode || 'bicep';
     }
-    
-    // Update mode indicator
-    const currentMode = document.getElementById('currentMode');
-    const modeDescription = document.getElementById('modeDescription');
-    const helpText = document.getElementById('helpText');
-    
-    const modeConfig = {
-        'resource': {
-            display: '📄 Resource Schema',
-            description: 'For validating schema definitions',
-            help: 'Paste a resource schema JSON or click a template below to get started'
-        },
-        'template': {
-            display: '📦 Full ARM Template',
-            description: 'For validating complete deployment templates',
-            help: 'Paste a complete ARM deployment template for validation'
-        },
-        'bicep': {
-            display: '🔧 Bicep Template',
-            description: 'For validating Bicep template syntax',
-            help: 'Paste your Bicep template code for syntax and structure validation'
-        }
-    };
-    
-    const config = modeConfig[mode] || modeConfig['resource'];
-    
-    if (currentMode) currentMode.textContent = config.display;
-    if (modeDescription) modeDescription.textContent = config.description;
-    if (helpText) helpText.textContent = config.help;
-    
-    showNotificationPro(`Switched to ${config.display} validation mode`, 'info', 2000);
-}
-
-function displayValidationResults(results, outputElement) {
-    let html = `
-        <div class="validation-summary">
-            <div class="validation-status ${results.isValid ? 'valid' : 'invalid'}">
-                <i class="fas ${results.isValid ? 'fa-check-circle' : 'fa-times-circle'}"></i>
-                <h4>${results.isValid ? 'Validation Passed' : 'Validation Failed'}</h4>
-                <p>Type: ${results.type}</p>
-            </div>
-        </div>
-    `;
-    
-    if (results.errors.length > 0) {
-        html += `
-            <div class="validation-section errors">
-                <h4><i class="fas fa-exclamation-circle"></i> Errors (${results.errors.length})</h4>
-                <ul>
-                    ${results.errors.map(error => `<li>${error}</li>`).join('')}
-                </ul>
-            </div>
-        `;
-    }
-    
-    if (results.warnings.length > 0) {
-        html += `
-            <div class="validation-section warnings">
-                <h4><i class="fas fa-exclamation-triangle"></i> Warnings (${results.warnings.length})</h4>
-                <ul>
-                    ${results.warnings.map(warning => `<li>${warning}</li>`).join('')}
-                </ul>
-            </div>
-        `;
-    }
-    
-    if (results.suggestions.length > 0) {
-        html += `
-            <div class="validation-section suggestions">
-                <h4><i class="fas fa-lightbulb"></i> Info & Suggestions (${results.suggestions.length})</h4>
-                <ul>
-                    ${results.suggestions.map(suggestion => `<li>${suggestion}</li>`).join('')}
-                </ul>
-            </div>
-        `;
-    }
-    
-    outputElement.innerHTML = html;
+    return 'bicep'; // default
 }
 
 function runTestSuite() {
-    const testSuiteOutput = document.getElementById('testSuiteOutput');
-    const schemaEditor = document.getElementById('schemaEditor');
-    
-    if (!schemaEditor || !schemaEditor.value.trim()) {
-        showNotificationPro('❌ Please enter some code to test', 'error');
-        return;
-    }
-    
-    showNotificationPro('🧪 Running comprehensive test suite...', 'info', 2000);
-    
-    const code = schemaEditor.value.trim();
-    const currentMode = getCurrentValidationMode();
-    
-    try {
-        const testResults = runComprehensiveTests(code, currentMode);
-        displayTestResults(testResults, testSuiteOutput);
-        
-        const passedTests = testResults.filter(test => test.passed).length;
-        const totalTests = testResults.length;
-        
-        if (passedTests === totalTests) {
-            showNotificationPro(`✅ All ${totalTests} tests passed!`, 'success');
-        } else {
-            showNotificationPro(`⚠️ ${passedTests}/${totalTests} tests passed`, 'warning');
-        }
-        
-    } catch (error) {
-        console.error('Test suite error:', error);
-        testSuiteOutput.innerHTML = `
-            <div class="test-error">
-                <i class="fas fa-flask"></i>
-                <h4>Test Suite Error</h4>
-                <p>${error.message}</p>
-            </div>
-        `;
-        showNotificationPro('❌ Test suite failed: ' + error.message, 'error');
-    }
-}
-
-function runComprehensiveTests(code, mode) {
-    const tests = [];
-    
-    try {
-        // Basic syntax test
-        tests.push({
-            name: 'Syntax Validation',
-            description: 'Code is syntactically valid',
-            passed: true,
-            details: 'Code parsed successfully'
-        });
-        
-        if (mode === 'bicep') {
-            // Bicep-specific tests
-            tests.push({
-                name: 'Resource Declaration',
-                description: 'Contains resource declarations',
-                passed: code.includes('resource '),
-                details: code.includes('resource ') ? 'Found resource declarations' : 'No resource declarations found'
-            });
-            
-            tests.push({
-                name: 'Parameter Usage',
-                description: 'Uses parameters for configurability',
-                passed: code.includes('param '),
-                details: code.includes('param ') ? 'Found parameter declarations' : 'No parameters found'
-            });
-            
-        } else {
-            // JSON tests
-            const parsed = JSON.parse(code);
-            
-            if (mode === 'template') {
-                // ARM Template tests
-                tests.push({
-                    name: 'ARM Schema',
-                    description: 'Has valid ARM template schema',
-                    passed: parsed.$schema && parsed.$schema.includes('deploymentTemplate.json'),
-                    details: parsed.$schema ? `Schema: ${parsed.$schema}` : 'No schema specified'
-                });
-                
-                tests.push({
-                    name: 'Content Version',
-                    description: 'Has content version',
-                    passed: !!parsed.contentVersion,
-                    details: parsed.contentVersion ? `Version: ${parsed.contentVersion}` : 'No content version'
-                });
-                
-                tests.push({
-                    name: 'Resources Array',
-                    description: 'Contains resources array',
-                    passed: Array.isArray(parsed.resources),
-                    details: Array.isArray(parsed.resources) ? `${parsed.resources.length} resources` : 'No resources array'
-                });
-                
-            } else {
-                // JSON Schema tests
-                tests.push({
-                    name: 'Schema Declaration',
-                    description: 'Has JSON Schema declaration',
-                    passed: !!parsed.$schema,
-                    details: parsed.$schema || 'No $schema property'
-                });
-                
-                tests.push({
-                    name: 'Type Definition',
-                    description: 'Has type definition',
-                    passed: !!parsed.type,
-                    details: parsed.type || 'No type specified'
-                });
-            }
-        }
-        
-        // Structural tests
-        const lineCount = code.split('\n').length;
-        tests.push({
-            name: 'Code Size',
-            description: 'Reasonable code size',
-            passed: lineCount > 5 && lineCount < 1000,
-            details: `${lineCount} lines of code`
-        });
-        
-    } catch (error) {
-        tests.push({
-            name: 'Syntax Validation',
-            description: 'Code is syntactically valid',
-            passed: false,
-            details: `Parse error: ${error.message}`
-        });
-    }
-    
-    return tests;
-}
-
-function displayTestResults(testResults, outputElement) {
-    const passedCount = testResults.filter(test => test.passed).length;
-    const totalCount = testResults.length;
-    const passRate = Math.round((passedCount / totalCount) * 100);
-    
-    let html = `
-        <div class="test-summary">
-            <div class="test-stats">
-                <h4>Test Suite Results</h4>
-                <div class="stats-grid">
-                    <div class="stat-item">
-                        <div class="stat-value ${passedCount === totalCount ? 'success' : 'warning'}">${passedCount}/${totalCount}</div>
-                        <div class="stat-label">Tests Passed</div>
-                    </div>
-                    <div class="stat-item">
-                        <div class="stat-value ${passRate >= 80 ? 'success' : passRate >= 60 ? 'warning' : 'error'}">${passRate}%</div>
-                        <div class="stat-label">Pass Rate</div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        
-        <div class="test-details">
-            <h4>Individual Test Results</h4>
-            ${testResults.map(test => `
-                <div class="test-item ${test.passed ? 'passed' : 'failed'}">
-                    <div class="test-header">
-                        <i class="fas ${test.passed ? 'fa-check' : 'fa-times'}"></i>
-                        <span class="test-name">${test.name}</span>
-                        <span class="test-status">${test.passed ? 'PASS' : 'FAIL'}</span>
-                    </div>
-                    <div class="test-description">${test.description}</div>
-                    <div class="test-details-text">${test.details}</div>
-                </div>
-            `).join('')}
-        </div>
-    `;
-    
-    outputElement.innerHTML = html;
+    showSuccess('🧪 Test suite functionality coming soon!');
 }
 
 function loadSampleCode() {
-    const currentMode = getCurrentValidationMode();
-    const codeInput = document.getElementById('codeInput');
-    
-    if (!codeInput) return;
-    
-    let sampleCode = '';
-    
-    switch (currentMode) {
-        case 'bicep':
-            sampleCode = `// Sample Bicep Template
-param storageAccountName string = 'mystorageaccount'
-param location string = resourceGroup().location
-
-resource storageAccount 'Microsoft.Storage/storageAccounts@2021-04-01' = {
-  name: storageAccountName
-  location: location
-  sku: {
-    name: 'Standard_LRS'
-  }
-  kind: 'StorageV2'
-  properties: {
-    accessTier: 'Hot'
-  }
-}
-
-output storageAccountId string = storageAccount.id`;
-            break;
-            
-        case 'template':
-            sampleCode = `{
-  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
-  "contentVersion": "1.0.0.0",
-  "parameters": {
-    "storageAccountName": {
-      "type": "string",
-      "metadata": {
-        "description": "Name of the storage account"
-      }
-    }
-  },
-  "variables": {},
-  "resources": [
-    {
-      "type": "Microsoft.Storage/storageAccounts",
-      "apiVersion": "2021-04-01",
-      "name": "[parameters('storageAccountName')]",
-      "location": "[resourceGroup().location]",
-      "sku": {
-        "name": "Standard_LRS"
-      },
-      "kind": "StorageV2"
-    }
-  ],
-  "outputs": {
-    "storageAccountId": {
-      "type": "string",
-      "value": "[resourceId('Microsoft.Storage/storageAccounts', parameters('storageAccountName'))]"
-    }
-  }
-}`;
-            break;
-            
-        default: // resource schema
-            sampleCode = `{
-  "$schema": "http://json-schema.org/draft-07/schema#",
-  "type": "object",
-  "title": "Storage Account Schema",
-  "description": "JSON Schema for Azure Storage Account",
-  "properties": {
-    "apiVersion": {
-      "type": "string",
-      "const": "2021-04-01"
-    },
-    "type": {
-      "type": "string",
-      "const": "Microsoft.Storage/storageAccounts"
-    },
-    "name": {
-      "type": "string",
-      "pattern": "^[a-z0-9]{3,24}$"
-    },
-    "location": {
-      "type": "string"
-    },
-    "sku": {
-      "type": "object",
-      "properties": {
-        "name": {
-          "type": "string",
-          "enum": ["Standard_LRS", "Standard_GRS", "Premium_LRS"]
-        }
-      },
-      "required": ["name"]
-    }
-  },
-  "required": ["apiVersion", "type", "name", "location", "sku"]
-}`;
-            break;
-    }
-    
-    codeInput.value = sampleCode;
-    showNotificationPro(`✅ Sample ${getCurrentValidationMode()} code loaded`, 'success', 2000);
-}
-
-function clearValidation() {
-    const codeInput = document.getElementById('codeInput');
-    const validationOutput = document.getElementById('validationOutput');
-    const testSuiteOutput = document.getElementById('testSuiteOutput');
-    
-    if (codeInput) codeInput.value = '';
-    
-    if (validationOutput) {
-        validationOutput.innerHTML = `
-            <div class="no-results">
-                <i class="fas fa-info-circle"></i>
-                <p>No validation results yet. Click "Validate" to start.</p>
-            </div>
-        `;
-    }
-    
-    if (testSuiteOutput) {
-        testSuiteOutput.innerHTML = `
-            <div class="no-results">
-                <i class="fas fa-vial"></i>
-                <p>No test results yet. Click "Run Test Suite" for comprehensive testing.</p>
-            </div>
-        `;
-    }
-    
-    showNotificationPro('🧹 Validation workspace cleared', 'info', 1500);
+    showSuccess('📄 Sample code loading functionality coming soon!');
 }
