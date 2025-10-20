@@ -54,80 +54,116 @@ function bindUIActions() {
 
 ### Local Development
 ```bash
-# Serve locally (required for file loading)
+# Serve locally (required for file loading - no build step needed)
 python -m http.server 8000
 # Open http://localhost:8000
 
-# Test schemas
+# Test all schemas (validates both draft-07 and draft-04)
 npm test
 
-# Validate Bicep templates  
+# Validate individual Bicep templates  
 az bicep build --file templates/storage-account.bicep
 ```
 
-### Schema Updates
+### Schema Development Workflow
 When modifying `schemas/*.json`:
-1. Update the schema file
+1. Update the schema file (check `$schema` for draft version)
 2. Run `npm test` to validate with AJV
-3. Test in UI with sample data
-4. Update corresponding Bicep template if needed
+3. Test in UI with sample data from the appropriate tab
+4. Update corresponding Bicep template in `templates/` if API versions change
 
-### Template Development
-Bicep templates use 2023-2024 API versions and follow security-first patterns:
-- Managed identity by default (`enableManagedIdentity: true`)
-- HTTPS-only, TLS 1.2+ enforcement
-- Private endpoints where applicable
+### Template Development Workflow
+Bicep templates follow strict patterns:
+- **API Versions**: Use 2023-2024 versions (defined in `SchemaParser.bicepPatterns.apiVersion`)
+- **Security defaults**: `supportsHttpsTrafficOnly: true`, `minimumTlsVersion: 'TLS1_2'`
+- **Managed identity**: `enableManagedIdentity` parameter with conditional identity block
+- **Parameter patterns**: `@description()`, `@allowed()`, `@minLength()` decorators
 
 ## 🚨 Common Gotchas
 
-### Theme Duplication Issue
-`script.js` has duplicate `initializeTheme()` functions - keep only the version using `document.documentElement.setAttribute('data-theme', theme)`.
-
-### ID Conflicts Across Tabs
+### Element ID Conflicts Across Tabs
 Elements like `validateBtn`, `schemaEditor` exist in multiple tabs. Always use tab-aware selection:
 ```javascript
 // ❌ Wrong - gets first match
 document.getElementById('validateBtn')
 
-// ✅ Correct - tab-aware
+// ✅ Correct - tab-aware selection
 const activeTab = document.querySelector('.nav-tab.active')?.getAttribute('data-tab');
 if (activeTab === 'schema-validator') {
   document.getElementById('validatorValidateBtn');
 }
 ```
 
-### Schema Parser Availability
-Always check for utility availability:
+### Schema Draft Version Confusion
+- ARM templates use draft-04 (`schemas/armDeploymentTemplate.json`)
+- Individual resource schemas use draft-07
+- Test script handles both with separate AJV instances
+
+### Utility Availability Checks
+Always check for utility availability before instantiation:
 ```javascript
 if (typeof SchemaParser !== 'undefined') {
   schemaParser = new SchemaParser();
 } else {
-  // Use fallback validation
-  performBasicValidation();
+  console.warn('⚠️ SchemaParser not available - using basic validation only');
 }
+```
+
+### File Serving Requirements
+The app must be served via HTTP server (not file://) due to fetch() calls for loading schemas and templates.
 ```
 
 ## 🔗 Integration Points
 
 ### Azure Resource Graph
-`utils/azureResourceGraph.js` provides live Azure resource querying when authenticated.
+`utils/azureResourceGraph.js` provides live Azure resource querying when authenticated. Used in deployment builder for resource discovery.
 
 ### GitHub Pages Deployment  
-Auto-deploys via `.github/workflows/deploy.yml` on main branch pushes. No build step required (static files).
+Auto-deploys via `.github/workflows/deploy.yml` on main branch pushes. Static files only - no build step required.
 
-### CI/CD Validation
-`.github/workflows/validate.yml` runs on template/schema changes:
-- Bicep template compilation with Azure CLI
-- JSON schema validation with AJV
-- Security scanning with Trivy
+### CI/CD Validation Pipeline
+`.github/workflows/validate.yml` triggers on template/schema changes:
+- **Bicep validation**: `az bicep build` for all templates in `templates/`
+- **Schema validation**: AJV validation for both draft-07 and draft-04 schemas
+- **Security scanning**: Trivy for Infrastructure as Code security checks
+- **Triggers**: `templates/**.bicep`, `schemas/**.json`, `tests/**` file changes
 
-## 📝 File Naming Conventions
+## � File Organization Patterns
 
-- Schemas: `schemas/{resourceType}.json` (e.g., `storageAccount.json`)
-- Templates: `templates/{resource-name}.bicep` (kebab-case)
-- Tests: `tests/validate-{type}.js`
-- Docs: Uppercase markdown in root (e.g., `DEPLOYMENT-GUIDE.md`)
+### Resource Naming Conventions
+- **Schemas**: `schemas/{resourceType}.json` (camelCase, e.g., `storageAccount.json`)
+- **Templates**: `templates/{resource-name}.bicep` (kebab-case, e.g., `storage-account.bicep`)
+- **Tests**: `tests/validate-{type}.js` (descriptive)
+- **Documentation**: Uppercase markdown files in root (e.g., `DEPLOYMENT-GUIDE.md`)
+
+### Template Structure Pattern
+All Bicep templates follow this structure:
+```bicep
+@description('...') param location string = resourceGroup().location
+@description('...') @minLength(3) @maxLength(24) param resourceName string
+@allowed([...]) param skuName string = 'Standard_LRS'
+param enableManagedIdentity bool = false
+param tags object = {}
+
+resource mainResource '...' = {
+  // Security-hardened properties by default
+}
+```
 
 ## 🧪 Testing Strategy
 
-Run `npm test` before commits - validates all schemas with AJV and checks ARM template structure. For UI testing, use browser dev tools with the tab-aware validation functions.
+### Pre-commit Validation
+```bash
+npm test  # Validates all 9 schemas + ARM template structure
+```
+
+### UI Testing Approach
+- Use browser dev tools with tab-aware validation functions
+- Test schema upload/validation in each tab independently
+- Verify dual-mode validation (resource vs template modes)
+
+### Schema Update Testing
+1. Modify schema in `schemas/`
+2. Run `npm test` to catch JSON Schema issues
+3. Test live in UI with sample resource JSON
+4. Verify corresponding Bicep template still compiles
