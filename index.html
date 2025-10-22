@@ -420,6 +420,32 @@
                         </div>
                     </section>
                     
+                    <section class="azure-integration card">
+                        <div class="card-header">
+                            <h3><i class="fas fa-cloud"></i> Azure Live Validation</h3>
+                        </div>
+                        <div class="card-content">
+                            <div id="azureStatus" class="azure-status">
+                                <p>?? Not connected to Azure. Connect to enable live resource validation.</p>
+                            </div>
+                            <div class="azure-actions">
+                                <button id="azureAuth" class="btn btn-primary" title="Connect to Azure to enable live validation">
+                                    ?? Connect to Azure
+                                </button>
+                                <button id="azureResourceTypes" class="btn btn-secondary" title="Browse Azure resource types using Resource Graph" disabled>
+                                    ?? Browse Resource Types
+                                </button>
+                                <button id="azureValidate" class="btn btn-info" title="Validate selected resources against live Azure APIs" disabled>
+                                    ? Validate with Azure
+                                </button>
+                            </div>
+                            <p class="azure-helper">
+                                <i class="fas fa-info-circle" aria-hidden="true"></i>
+                                Azure authentication is simulated for demo purposes. Replace with MSAL integration for production environments.
+                            </p>
+                        </div>
+                    </section>
+                    
                     <section class="validation-results card">
                         <div class="card-header">
                             <h3><i class="fas fa-tasks"></i> Validation Results</h3>

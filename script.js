@@ -347,6 +347,20 @@ function setupEventListeners() {
             console.error('❌ Theme toggle button not found!');
         }
         
+        // Azure integration controls
+        const azureAuthBtn = document.getElementById('azureAuth');
+        const azureResourceTypesBtn = document.getElementById('azureResourceTypes');
+        const azureValidateBtn = document.getElementById('azureValidate');
+
+        if (azureAuthBtn) azureAuthBtn.addEventListener('click', handleAzureAuth);
+        if (azureResourceTypesBtn) azureResourceTypesBtn.addEventListener('click', browseAzureResourceTypes);
+        if (azureValidateBtn) azureValidateBtn.addEventListener('click', validateWithAzure);
+
+        if (azureAuthBtn && azureResourceTypesBtn && azureValidateBtn && typeof updateAzureStatus === 'function') {
+            const isConnected = !!(azureResourceGraph && typeof azureResourceGraph.isAuthenticated === 'function' && azureResourceGraph.isAuthenticated());
+            updateAzureStatus(isConnected);
+        }
+
         // Resource selection checkboxes
         const resourceCheckboxes = document.querySelectorAll('.resource-checkbox input[type="checkbox"]');
         resourceCheckboxes.forEach(checkbox => {
@@ -4058,6 +4072,11 @@ function updateAzureStatus(connected) {
     const authBtn = document.getElementById('azureAuth');
     const resourceTypesBtn = document.getElementById('azureResourceTypes');
     const validateBtn = document.getElementById('azureValidate');
+    
+    if (!statusEl || !authBtn || !resourceTypesBtn || !validateBtn) {
+        console.warn('⚠️ Azure integration UI elements not found. Skipping status update.');
+        return;
+    }
     
     if (connected) {
         statusEl.innerHTML = '<p>✅ Connected to Azure. Live validation enabled.</p>';
