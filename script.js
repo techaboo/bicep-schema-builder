@@ -361,6 +361,13 @@ function setupEventListeners() {
             updateAzureStatus(isConnected);
         }
 
+        // Export buttons
+        const exportYamlBtn = document.getElementById('exportYaml');
+        const exportBicepBtn = document.getElementById('exportBicep');
+        
+        if (exportYamlBtn) exportYamlBtn.addEventListener('click', exportAsYAML);
+        if (exportBicepBtn) exportBicepBtn.addEventListener('click', exportAsBicep);
+
         // Resource selection checkboxes
         const resourceCheckboxes = document.querySelectorAll('.resource-checkbox input[type="checkbox"]');
         resourceCheckboxes.forEach(checkbox => {
