@@ -1246,3 +1246,123 @@ textarea {
         color: black !important;
     }
 }
+
+/* Microsoft Edge Compatibility Fixes */
+@supports (-ms-ime-align: auto) {
+    /* Edge-specific fixes for layout and rendering */
+    .btn {
+        -ms-flex-align: center;
+    }
+    
+    .content-grid {
+        display: -ms-grid;
+        -ms-grid-columns: 1fr 1fr;
+    }
+    
+    .nav-tabs {
+        display: -ms-flexbox;
+    }
+    
+    .header-content {
+        display: -ms-flexbox;
+    }
+}
+
+/* Edge Legacy (pre-Chromium) support */
+@media all and (-ms-high-contrast: none), (-ms-high-contrast: active) {
+    /* IE11 and Edge Legacy specific fixes */
+    .btn {
+        display: inline-block;
+    }
+    
+    .content-grid {
+        display: block;
+    }
+    
+    .content-grid > * {
+        display: inline-block;
+        width: 48%;
+        margin-right: 2%;
+        vertical-align: top;
+    }
+    
+    .content-grid > *:nth-child(2n) {
+        margin-right: 0;
+    }
+    
+    .nav-tabs {
+        display: block;
+    }
+    
+    .nav-tab {
+        display: inline-block;
+        width: 25%;
+    }
+    
+    /* Fix for CSS variables in Edge Legacy */
+    body {
+        color: #333333;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    }
+    
+    body.dark-theme {
+        color: #ffffff;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    }
+    
+    .card {
+        background: #ffffff;
+        border: 1px solid #f1f3f4;
+    }
+    
+    body.dark-theme .card {
+        background: #1f2937;
+        border: 1px solid #4b5563;
+    }
+    
+    .btn-primary {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+    }
+    
+    .form-input, .form-select, textarea {
+        background: #ffffff;
+        color: #333333;
+        border: 2px solid #e0e0e0;
+    }
+    
+    body.dark-theme .form-input, 
+    body.dark-theme .form-select, 
+    body.dark-theme textarea {
+        background: #1f2937;
+        color: #ffffff;
+        border: 2px solid #4b5563;
+    }
+}
+
+/* Edge Chromium specific fixes */
+@supports (backdrop-filter: blur(8px)) {
+    .modal-overlay {
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
+    }
+}
+
+/* Fix for CSS Grid in older Edge versions */
+@supports not (display: grid) {
+    .content-grid {
+        display: flex;
+        flex-wrap: wrap;
+    }
+    
+    .content-grid > * {
+        flex: 1 1 48%;
+        margin-bottom: var(--spacing-lg);
+    }
+    
+    @media (max-width: 1024px) {
+        .content-grid > * {
+            flex: 1 1 100%;
+        }
+    }
+}

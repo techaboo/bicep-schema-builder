@@ -647,21 +647,6 @@
     </script>
     <script src="utils/schemaParser.js" onerror="console.warn('schemaParser.js not found - using placeholder')"></script>
     <script src="utils/azureResourceGraph.js" onerror="console.warn('azureResourceGraph.js not found - using placeholder')"></script>
-    <script>
-        // Theme initialization on page load
-        document.addEventListener('DOMContentLoaded', function() {
-            // Load saved theme
-            const savedTheme = localStorage.getItem('bicep-builder-theme');
-            if (savedTheme === 'dark') {
-                document.body.classList.add('dark-theme');
-                const themeIcon = document.querySelector('#themeToggle i');
-                if (themeIcon) {
-                    themeIcon.classList.remove('fa-moon');
-                    themeIcon.classList.add('fa-sun');
-                }
-            }
-        });
-    </script>
     <script src="script.js"></script>
 </body>
 </html>
