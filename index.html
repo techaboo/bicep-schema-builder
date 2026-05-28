@@ -27,6 +27,11 @@
     
     <!-- Security & Performance -->
     <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
+    <!-- MSAL.js for Azure Entra sign-in with MFA support (PKCE SPA flow) -->
+    <script src="https://alcdn.msauth.net/browser/2.38.3/js/msal-browser.min.js"
+            integrity="sha384-W8QrKbCoMGPmh+kFicJBqiQ5dP8LgIGpHsMqJaXqv2BrnifHoEAFkrHp3DJUllV"
+            crossorigin="anonymous"
+            onerror="console.warn('MSAL CDN failed to load; sign-in will be unavailable.')"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="preconnect" href="https://cdnjs.cloudflare.com">
@@ -426,22 +431,30 @@
                         </div>
                         <div class="card-content">
                             <div id="azureStatus" class="azure-status">
-                                <p>?? Not connected to Azure. Connect to enable live resource validation.</p>
+                                <p>🔒 Not signed in. Sign in to enable live resource validation.</p>
+                            </div>
+                            <!-- Subscription selector (shown after sign-in) -->
+                            <div id="subscriptionSelector" class="subscription-selector" style="display:none;">
+                                <label for="subscriptionSelect"><i class="fas fa-layer-group"></i> Subscription:</label>
+                                <select id="subscriptionSelect" class="form-select" title="Select Azure subscription" aria-label="Azure subscription selector">
+                                    <option value="">Loading…</option>
+                                </select>
                             </div>
                             <div class="azure-actions">
-                                <button id="azureAuth" class="btn btn-primary" title="Connect to Azure to enable live validation">
-                                    ?? Connect to Azure
+                                <button id="azureAuth" class="btn btn-primary" title="Sign in with your Microsoft / Azure account (MFA supported)">
+                                    🔐 Sign in with Microsoft
                                 </button>
                                 <button id="azureResourceTypes" class="btn btn-secondary" title="Browse Azure resource types using Resource Graph" disabled>
-                                    ?? Browse Resource Types
+                                    📋 Browse Resource Types
                                 </button>
                                 <button id="azureValidate" class="btn btn-info" title="Validate selected resources against live Azure APIs" disabled>
-                                    ? Validate with Azure
+                                    ✅ Validate with Azure
                                 </button>
                             </div>
                             <p class="azure-helper">
                                 <i class="fas fa-info-circle" aria-hidden="true"></i>
-                                Azure authentication is simulated for demo purposes. Replace with MSAL integration for production environments.
+                                Sign in with your Microsoft account. MFA is supported via the browser popup.
+                                See <a href="https://github.com/techaboo/bicep-schema-builder#azure-authentication" target="_blank" rel="noopener">setup guide</a> for Entra app registration instructions.
                             </p>
                         </div>
                     </section>
@@ -484,6 +497,55 @@
                 </div>
                 
                 <div class="templates-workspace">
+                    <!-- Environment Profile Card -->
+                    <section class="env-profile-card card">
+                        <div class="card-header">
+                            <h3><i class="fas fa-sliders-h"></i> Environment Profile</h3>
+                            <p>Define where and how resources are deployed. Saved for this session.</p>
+                        </div>
+                        <div class="card-content">
+                            <div class="env-profile-grid">
+                                <div class="env-field">
+                                    <label for="envEnvironment"><i class="fas fa-tag"></i> Environment</label>
+                                    <select id="envEnvironment" class="form-select" aria-label="Target environment">
+                                        <option value="dev">dev</option>
+                                        <option value="test">test</option>
+                                        <option value="staging">staging</option>
+                                        <option value="prod">prod</option>
+                                    </select>
+                                </div>
+                                <div class="env-field">
+                                    <label for="envResourceGroup"><i class="fas fa-folder"></i> Resource Group</label>
+                                    <input type="text" id="envResourceGroup" class="form-input" value="bicep-rg" placeholder="e.g. my-rg" aria-label="Target resource group name"/>
+                                </div>
+                                <div class="env-field">
+                                    <label for="envLocation"><i class="fas fa-map-marker-alt"></i> Location</label>
+                                    <select id="envLocation" class="form-select" aria-label="Azure region">
+                                        <option value="eastus">East US</option>
+                                        <option value="eastus2">East US 2</option>
+                                        <option value="westus2">West US 2</option>
+                                        <option value="westus3">West US 3</option>
+                                        <option value="centralus">Central US</option>
+                                        <option value="westeurope">West Europe</option>
+                                        <option value="northeurope">North Europe</option>
+                                        <option value="uksouth">UK South</option>
+                                        <option value="australiaeast">Australia East</option>
+                                        <option value="southeastasia">Southeast Asia</option>
+                                    </select>
+                                </div>
+                                <div class="env-field">
+                                    <label for="envResourcePrefix"><i class="fas fa-font"></i> Resource Prefix</label>
+                                    <input type="text" id="envResourcePrefix" class="form-input" value="bicep" placeholder="e.g. myapp" aria-label="Resource name prefix"/>
+                                </div>
+                            </div>
+                            <div class="env-profile-actions">
+                                <button id="saveEnvProfile" class="btn btn-primary" title="Save environment profile for this session">💾 Save Profile</button>
+                                <button id="resetEnvProfile" class="btn btn-outline" title="Reset to defaults">↺ Reset</button>
+                                <span id="envProfileStatus" class="env-profile-status"></span>
+                            </div>
+                        </div>
+                    </section>
+
                     <section class="template-library card">
                         <div class="card-header">
                             <h3><i class="fas fa-book-open"></i> Template Library</h3>
@@ -596,6 +658,25 @@
                                     <button id="previewDeployment" class="btn btn-info" title="Preview the deployment template before exporting">👁️ Preview Deployment</button>
                                     <button id="exportSelectedBicep" class="btn btn-success" title="Export selected resources as Bicep template files">📦 Export Selected Resources</button>
                                     <button id="downloadDeploymentPackage" class="btn btn-warning" title="Download complete deployment package with templates and parameters">⬇️ Download Package</button>
+                                    <button id="whatIfDeploymentBtn" class="btn btn-secondary" title="Preview what Azure changes will occur (What-If). Requires Azure sign-in." disabled>🔎 What-If Preview</button>
+                                    <button id="deployToAzureBtn" class="btn btn-danger" title="Deploy the selected resources directly to Azure. Requires Azure sign-in." disabled>🚀 Deploy to Azure</button>
+                                </div>
+
+                                <!-- What-If results panel -->
+                                <div id="whatIfPanel" class="whatif-panel" style="display:none;">
+                                    <div class="card-header">
+                                        <h4><i class="fas fa-search-plus"></i> What-If Preview Results</h4>
+                                        <button id="closeWhatIfPanel" class="btn btn-outline btn-sm">✕ Close</button>
+                                    </div>
+                                    <div id="whatIfResults" class="whatif-results"></div>
+                                </div>
+
+                                <!-- Deployment status panel -->
+                                <div id="deploymentStatusPanel" class="deployment-status-panel" style="display:none;">
+                                    <div class="card-header">
+                                        <h4><i class="fas fa-rocket"></i> Deployment Status</h4>
+                                    </div>
+                                    <div id="deploymentStatusContent" class="deployment-status-content"></div>
                                 </div>
                                 
                                 <div id="selectedResourcesPreview" class="selected-preview">
@@ -647,6 +728,8 @@
     </script>
     <script src="utils/schemaParser.js" onerror="console.warn('schemaParser.js not found - using placeholder')"></script>
     <script src="utils/azureResourceGraph.js" onerror="console.warn('azureResourceGraph.js not found - using placeholder')"></script>
+    <script src="authConfig.js" onerror="console.warn('authConfig.js not found')"></script>
+    <script src="deploymentService.js" onerror="console.warn('deploymentService.js not found')"></script>
     <script src="script.js"></script>
 </body>
 </html>
