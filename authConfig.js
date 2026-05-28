@@ -26,8 +26,8 @@ const MSAL_CONFIG = {
         clientId: 'YOUR_CLIENT_ID',
         // Single-tenant authority – replace YOUR_TENANT_ID with your Entra tenant GUID or domain
         authority: 'https://login.microsoftonline.com/YOUR_TENANT_ID',
-        redirectUri: window.location.origin + window.location.pathname.replace(/\/$/, ''),
-        postLogoutRedirectUri: window.location.origin + window.location.pathname.replace(/\/$/, '')
+        redirectUri: window.location.origin + window.location.pathname,
+        postLogoutRedirectUri: window.location.origin + window.location.pathname
     },
     cache: {
         // sessionStorage: tokens do not persist across browser tabs or sessions
