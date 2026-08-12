@@ -584,6 +584,51 @@ az deployment group create \
 
 ---
 
+## Browser Deployment Workflow
+
+The Bicep Schema Builder supports deploying directly from the browser using your Azure account. Follow these steps for a repeatable, traceable deployment.
+
+### Step 1: Sign in with Microsoft
+
+1. Open the **Schema Validator** tab.
+2. In the **Azure Live Validation** panel, click **🔐 Sign in with Microsoft**.
+3. A browser popup opens — complete MFA if prompted.
+4. After sign-in, select your target subscription from the **Subscription** dropdown.
+
+### Step 2: Set the Environment Profile
+
+1. Open the **Deployment Builder** tab.
+2. In the **Environment Profile** card, fill in:
+   - **Environment** — `dev`, `test`, `staging`, or `prod`
+   - **Resource Group** — the target resource group (must exist)
+   - **Location** — Azure region (e.g. `eastus`)
+   - **Resource Prefix** — short prefix for all resource names (e.g. `myapp`)
+3. Click **💾 Save Profile**. The profile is stored in `sessionStorage` for the duration of your browser session.
+
+### Step 3: Select Resources and Configure Parameters
+
+1. In the **Resource Catalog**, tick the checkboxes for each resource type you want to deploy.
+2. Click **⚙️ Configure Resources** to set resource-specific parameters.
+3. Click **⬇️ Download Package** to get a ZIP containing the generated Bicep templates and parameter files. The content is deterministic: the same profile + resource selections always produce identical files.
+
+### Step 4: Preview Changes (What-If)
+
+Before committing to a deployment, click **🔎 What-If Preview**. This calls the ARM What-If endpoint and shows a diff of which resources will be **created**, **modified**, or **deleted** — without making any changes. Review the results in the panel that appears.
+
+### Step 5: Deploy and Monitor
+
+1. Click **🚀 Deploy to Azure**. A confirmation dialog shows your subscription, resource group, and environment.
+2. Confirm to start the deployment. The **Deployment Status** panel tracks progress in real time.
+3. Deployments are named `{resourcePrefix}-{environment}-{timestamp}` so successive runs are distinguishable in the Azure portal.
+
+### Repeatability Notes
+
+- The same **Environment Profile** + same **resource selections** always produces identical parameter files (no random values in file content).
+- The deployment name includes a Unix timestamp so each run is traceable; the underlying template content is still identical for the same inputs.
+- Download the parameter ZIP as an artifact to reproduce the exact deployment outside the browser (`az deployment group create --template-file ... --parameters @params.json`).
+
+---
+
 ## Additional Resources
 
 - [Azure Bicep Documentation](https://docs.microsoft.com/en-us/azure/azure-resource-manager/bicep/)

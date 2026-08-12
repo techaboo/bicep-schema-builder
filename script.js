@@ -356,10 +356,32 @@ function setupEventListeners() {
         if (azureResourceTypesBtn) azureResourceTypesBtn.addEventListener('click', browseAzureResourceTypes);
         if (azureValidateBtn) azureValidateBtn.addEventListener('click', validateWithAzure);
 
-        if (azureAuthBtn && azureResourceTypesBtn && azureValidateBtn && typeof updateAzureStatus === 'function') {
-            const isConnected = !!(azureResourceGraph && typeof azureResourceGraph.isAuthenticated === 'function' && azureResourceGraph.isAuthenticated());
-            updateAzureStatus(isConnected);
-        }
+        // Determine initial auth state from AzureAuth module (may already have a session-storage token)
+        const auth = window.AzureAuth;
+        const initialAccount = auth ? auth.getActiveAccount() : null;
+        updateAzureStatus(!!(initialAccount), initialAccount || null);
+
+        // Deployment Builder — new What-If and Deploy buttons
+        const whatIfBtn = document.getElementById('whatIfDeploymentBtn');
+        const deployBtn = document.getElementById('deployToAzureBtn');
+        const closeWhatIfBtn = document.getElementById('closeWhatIfPanel');
+
+        if (whatIfBtn) whatIfBtn.addEventListener('click', handleWhatIfPreview);
+        if (deployBtn) deployBtn.addEventListener('click', handleDeployToAzure);
+        if (closeWhatIfBtn) closeWhatIfBtn.addEventListener('click', () => {
+            const panel = document.getElementById('whatIfPanel');
+            if (panel) panel.style.display = 'none';
+        });
+
+        // Environment Profile form
+        const saveEnvBtn = document.getElementById('saveEnvProfile');
+        const resetEnvBtn = document.getElementById('resetEnvProfile');
+
+        if (saveEnvBtn) saveEnvBtn.addEventListener('click', handleSaveEnvProfile);
+        if (resetEnvBtn) resetEnvBtn.addEventListener('click', handleResetEnvProfile);
+
+        // Load any saved env profile into the form on init
+        _loadEnvProfileToForm();
 
         // Export buttons
         const exportYamlBtn = document.getElementById('exportYaml');
@@ -3595,55 +3617,131 @@ handleFileUpload = async function(event) {
 };
 
 // Azure Integration Functions
+// ─────────────────────────────────────────────────────────────────────────────
+// Auth is handled by authConfig.js (window.AzureAuth).
+// Deployment operations are handled by deploymentService.js (window.DeploymentService).
+// ─────────────────────────────────────────────────────────────────────────────
+
 async function handleAzureAuth() {
-    if (!azureResourceGraph) {
-        showError('❌ Azure Resource Graph client not available');
+    const auth = window.AzureAuth;
+    if (!auth) {
+        showError('❌ AzureAuth module not loaded. Check that authConfig.js is present.');
+        return;
+    }
+
+    // If already signed in, toggle to sign-out
+    if (auth.isAuthenticated()) {
+        try {
+            showLoading('Signing out…');
+            await auth.handleAzureSignOut();
+            if (azureResourceGraph) azureResourceGraph.clearAuth();
+            updateAzureStatus(false, null);
+            showSuccess('✅ Signed out of Azure.');
+        } catch (err) {
+            showError(`❌ Sign-out failed: ${err.message}`);
+        }
         return;
     }
 
     try {
-        showLoading('Connecting to Azure...');
-        
-        // For demo purposes, we'll simulate authentication
-        // In a real implementation, you'd use MSAL.js or similar
-        const mockAuth = await simulateAzureAuth();
-        
-        if (mockAuth.success) {
-            azureResourceGraph.initialize(mockAuth.accessToken);
-            updateAzureStatus(true);
-            
-            // Load resource types in background
-            azureResourceGraph.getResourceTypes()
-                .then(() => showSuccess('✅ Connected to Azure and loaded resource types'))
-                .catch(error => showError(`⚠️ Connected but failed to load some data: ${error.message}`));
-        } else {
-            throw new Error(mockAuth.error);
+        showLoading('Opening Azure sign-in…');
+
+        const result = await auth.handleAzureSignIn();
+        const { account, accessToken } = result;
+
+        // Initialise the Resource Graph client with the real token
+        if (azureResourceGraph) azureResourceGraph.initialize(accessToken);
+
+        // Load available subscriptions and populate the selector
+        let subscriptions = [];
+        try {
+            subscriptions = await auth.getSubscriptions();
+        } catch (subErr) {
+            console.warn('Could not load subscriptions:', subErr);
         }
-    } catch (error) {
-        showError(`❌ Azure authentication failed: ${error.message}`);
-        updateAzureStatus(false);
+
+        _populateSubscriptionSelector(subscriptions);
+
+        updateAzureStatus(true, account);
+
+        // Load resource types in background
+        if (azureResourceGraph) {
+            azureResourceGraph.getResourceTypes()
+                .then(() => showSuccess('✅ Signed in and loaded resource types.'))
+                .catch(err => console.warn('Resource type load error:', err));
+        } else {
+            showSuccess(`✅ Signed in as ${account.username || account.name}`);
+        }
+
+        // Enable deploy/what-if buttons
+        _updateDeployButtonState();
+
+    } catch (err) {
+        showError(`❌ Azure sign-in failed: ${err.message}`);
+        updateAzureStatus(false, null);
     }
 }
 
-async function simulateAzureAuth() {
-    // Simulate authentication flow
-    // In real implementation, replace with proper MSAL.js authentication
-    return new Promise((resolve) => {
-        setTimeout(() => {
-            const shouldSucceed = Math.random() > 0.3; // 70% success rate for demo
-            if (shouldSucceed) {
-                resolve({
-                    success: true,
-                    accessToken: 'demo-token-' + Date.now() // Mock token
-                });
-            } else {
-                resolve({
-                    success: false,
-                    error: 'Authentication cancelled by user'
-                });
+/**
+ * Populates the subscription <select> element and wires the change event.
+ */
+function _populateSubscriptionSelector(subscriptions) {
+    const selectorDiv = document.getElementById('subscriptionSelector');
+    const selectEl = document.getElementById('subscriptionSelect');
+
+    if (!selectorDiv || !selectEl) return;
+
+    selectEl.innerHTML = '';
+    if (subscriptions.length === 0) {
+        selectEl.innerHTML = '<option value="">No subscriptions found</option>';
+    } else {
+        subscriptions.forEach(sub => {
+            const opt = document.createElement('option');
+            opt.value = sub.subscriptionId;
+            opt.textContent = sub.displayName || sub.subscriptionId;
+            selectEl.appendChild(opt);
+        });
+
+        // Default to first subscription or previously selected one
+        const auth = window.AzureAuth;
+        const previousSub = auth ? auth.getSelectedSubscriptionId() : '';
+        const match = subscriptions.find(s => s.subscriptionId === previousSub);
+        if (match) {
+            selectEl.value = match.subscriptionId;
+        } else {
+            // Default to first
+            const first = subscriptions[0];
+            if (auth) auth.setSelectedSubscription(first.subscriptionId, first.displayName);
+        }
+
+        selectEl.addEventListener('change', () => {
+            const chosen = subscriptions.find(s => s.subscriptionId === selectEl.value);
+            if (chosen && auth) {
+                auth.setSelectedSubscription(chosen.subscriptionId, chosen.displayName);
+                // Update the Resource Graph client with the new subscription context
+                if (azureResourceGraph) azureResourceGraph.setSubscriptionId(chosen.subscriptionId);
+                showSuccess(`✅ Subscription set to "${chosen.displayName}"`);
+                _updateDeployButtonState();
             }
-        }, 2000);
-    });
+        });
+    }
+
+    selectorDiv.style.display = 'flex';
+}
+
+/**
+ * Enables or disables the What-If and Deploy buttons based on auth + profile state.
+ */
+function _updateDeployButtonState() {
+    const auth = window.AzureAuth;
+    const whatIfBtn = document.getElementById('whatIfDeploymentBtn');
+    const deployBtn = document.getElementById('deployToAzureBtn');
+
+    const authed = auth && auth.isAuthenticated();
+    const hasSubscription = !!(auth && auth.getSelectedSubscriptionId());
+
+    if (whatIfBtn) whatIfBtn.disabled = !(authed && hasSubscription);
+    if (deployBtn) deployBtn.disabled = !(authed && hasSubscription);
 }
 
 async function browseAzureResourceTypes() {
@@ -4074,29 +4172,218 @@ function displayBulkValidationResults(results, isOffline) {
     showSuccess(`✅ Validated ${results.length} resources`);
 }
 
-function updateAzureStatus(connected) {
+function updateAzureStatus(connected, account) {
     const statusEl = document.getElementById('azureStatus');
     const authBtn = document.getElementById('azureAuth');
     const resourceTypesBtn = document.getElementById('azureResourceTypes');
     const validateBtn = document.getElementById('azureValidate');
+    const selectorDiv = document.getElementById('subscriptionSelector');
     
     if (!statusEl || !authBtn || !resourceTypesBtn || !validateBtn) {
         console.warn('⚠️ Azure integration UI elements not found. Skipping status update.');
         return;
     }
     
-    if (connected) {
-        statusEl.innerHTML = '<p>✅ Connected to Azure. Live validation enabled.</p>';
-        authBtn.textContent = '🔓 Disconnect from Azure';
+    if (connected && account) {
+        const displayName = account.name || account.username || 'Azure User';
+        const email = account.username || '';
+        const auth = window.AzureAuth;
+        const subName = auth ? auth.getSelectedSubscriptionName() : '';
+
+        statusEl.innerHTML = `
+            <div class="azure-user-info">
+                <span class="azure-user-icon">👤</span>
+                <div>
+                    <strong>${displayName}</strong>
+                    ${email ? `<br><small>${email}</small>` : ''}
+                    ${subName ? `<br><small>📋 ${subName}</small>` : ''}
+                </div>
+                <span class="azure-connected-badge">✅ Connected</span>
+            </div>`;
+        authBtn.textContent = '🔓 Sign out';
+        authBtn.title = 'Sign out of your Microsoft account';
         resourceTypesBtn.disabled = false;
         validateBtn.disabled = false;
+        if (selectorDiv) selectorDiv.style.display = 'flex';
     } else {
-        statusEl.innerHTML = '<p>🔒 Not connected to Azure. Connect to enable live resource validation.</p>';
-        authBtn.textContent = '🔐 Connect to Azure';
+        statusEl.innerHTML = '<p>🔒 Not signed in. Sign in to enable live resource validation.</p>';
+        authBtn.textContent = '🔐 Sign in with Microsoft';
+        authBtn.title = 'Sign in with your Microsoft / Azure account (MFA supported)';
         resourceTypesBtn.disabled = true;
         validateBtn.disabled = true;
+        if (selectorDiv) selectorDiv.style.display = 'none';
+        _updateDeployButtonState();
     }
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Environment Profile Handlers
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Reads the env profile form fields and populates them from sessionStorage.
+ */
+function _loadEnvProfileToForm() {
+    const svc = window.DeploymentService;
+    if (!svc) return;
+    const profile = svc.loadEnvProfile();
+    const envEl = document.getElementById('envEnvironment');
+    const rgEl = document.getElementById('envResourceGroup');
+    const locEl = document.getElementById('envLocation');
+    const pfxEl = document.getElementById('envResourcePrefix');
+    if (envEl) envEl.value = profile.environment || 'dev';
+    if (rgEl) rgEl.value = profile.resourceGroup || 'bicep-rg';
+    if (locEl) locEl.value = profile.location || 'eastus';
+    if (pfxEl) pfxEl.value = profile.resourcePrefix || 'bicep';
+}
+
+function handleSaveEnvProfile() {
+    const svc = window.DeploymentService;
+    if (!svc) { showError('DeploymentService not loaded.'); return; }
+
+    const auth = window.AzureAuth;
+    const profile = {
+        environment: document.getElementById('envEnvironment')?.value || 'dev',
+        resourceGroup: document.getElementById('envResourceGroup')?.value || 'bicep-rg',
+        location: document.getElementById('envLocation')?.value || 'eastus',
+        resourcePrefix: document.getElementById('envResourcePrefix')?.value || 'bicep',
+        subscriptionId: auth ? auth.getSelectedSubscriptionId() : '',
+    };
+    svc.saveEnvProfile(profile);
+
+    const statusEl = document.getElementById('envProfileStatus');
+    if (statusEl) {
+        statusEl.textContent = '✅ Saved';
+        setTimeout(() => { statusEl.textContent = ''; }, 2500);
+    }
+}
+
+function handleResetEnvProfile() {
+    const svc = window.DeploymentService;
+    if (!svc) return;
+    svc.saveEnvProfile(svc.DEFAULT_ENV_PROFILE);
+    _loadEnvProfileToForm();
+    const statusEl = document.getElementById('envProfileStatus');
+    if (statusEl) {
+        statusEl.textContent = '↺ Reset to defaults';
+        setTimeout(() => { statusEl.textContent = ''; }, 2500);
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// What-If Preview Handler
+// ─────────────────────────────────────────────────────────────────────────────
+
+async function handleWhatIfPreview() {
+    const auth = window.AzureAuth;
+    const svc = window.DeploymentService;
+    if (!auth || !auth.isAuthenticated()) {
+        showError('❌ Sign in to Azure first.');
+        return;
+    }
+    if (!svc) { showError('DeploymentService not loaded.'); return; }
+
+    try {
+        showLoading('Running What-If analysis…');
+        const token = await auth.getAccessToken();
+        const profile = svc.loadEnvProfile();
+        const paramFiles = svc.generateAllParameterFiles(getSelectedResources(), profile);
+        const templateContent = buildDeploymentTemplate(getSelectedResources(), profile);
+
+        const result = await svc.whatIfDeployment(token, profile, templateContent);
+
+        const panel = document.getElementById('whatIfPanel');
+        const resultsEl = document.getElementById('whatIfResults');
+        if (panel && resultsEl) {
+            resultsEl.innerHTML = svc.renderWhatIfChanges(result);
+            panel.style.display = 'block';
+            panel.scrollIntoView({ behavior: 'smooth' });
+        }
+        showSuccess('✅ What-If preview complete.');
+    } catch (err) {
+        showError(`❌ What-If failed: ${err.message}`);
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Deploy to Azure Handler
+// ─────────────────────────────────────────────────────────────────────────────
+
+async function handleDeployToAzure() {
+    const auth = window.AzureAuth;
+    const svc = window.DeploymentService;
+    if (!auth || !auth.isAuthenticated()) {
+        showError('❌ Sign in to Azure first.');
+        return;
+    }
+    if (!svc) { showError('DeploymentService not loaded.'); return; }
+
+    const profile = svc.loadEnvProfile();
+    if (!profile.resourceGroup || !profile.subscriptionId) {
+        showError('❌ Set the Environment Profile (resource group and subscription) before deploying.');
+        return;
+    }
+
+    const confirmed = window.confirm(
+        `Deploy to Azure?\n\nSubscription: ${profile.subscriptionId}\nResource Group: ${profile.resourceGroup}\nEnvironment: ${profile.environment}\n\nThis will create or update resources in Azure.`
+    );
+    if (!confirmed) return;
+
+    const statusPanel = document.getElementById('deploymentStatusPanel');
+    const statusContent = document.getElementById('deploymentStatusContent');
+    if (statusPanel) statusPanel.style.display = 'block';
+    if (statusContent) statusContent.innerHTML = '<p>🔄 Initiating deployment…</p>';
+
+    try {
+        const token = await auth.getAccessToken();
+        const templateContent = buildDeploymentTemplate(getSelectedResources(), profile);
+
+        const result = await svc.deployToAzure(token, profile, templateContent, (statusMsg) => {
+            if (statusContent) {
+                statusContent.innerHTML += `<p>${statusMsg}</p>`;
+            }
+        });
+
+        if (statusContent) {
+            statusContent.innerHTML += `<p>✅ Deployment complete: <strong>${result.name || 'Success'}</strong></p>`;
+        }
+        showSuccess(`✅ Deployed to Azure (${profile.environment})`);
+    } catch (err) {
+        if (statusContent) {
+            statusContent.innerHTML += `<p>❌ ${err.message}</p>`;
+        }
+        showError(`❌ Deployment failed: ${err.message}`);
+    }
+}
+
+/**
+ * Collects the IDs of currently selected resources from the Deployment Builder.
+ * Returns an array of resource-id strings.
+ */
+function getSelectedResources() {
+    const checkboxes = document.querySelectorAll('.resource-checkbox input[type="checkbox"]:checked');
+    return Array.from(checkboxes).map(cb => cb.value || cb.dataset.resourceId || cb.id);
+}
+
+/**
+ * Builds a minimal ARM template object from selected resources and env profile.
+ * In a real deployment this would use the full Bicep-compiled output.
+ */
+function buildDeploymentTemplate(resourceIds, profile) {
+    return {
+        '$schema': 'https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#',
+        contentVersion: '1.0.0.0',
+        parameters: {},
+        resources: resourceIds.map(id => ({
+            type: id,
+            apiVersion: '2021-01-01',
+            name: `${profile.resourcePrefix || 'bicep'}-${id.split('/').pop()}-${profile.environment}`,
+            location: profile.location || 'eastus',
+            properties: {}
+        }))
+    };
+}
+
 
 function createModal(title, closeText) {
     const modal = document.createElement('div');

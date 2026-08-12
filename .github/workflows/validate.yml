@@ -20,14 +20,19 @@ jobs:
   validate-bicep:
     name: Validate Bicep Templates
     runs-on: ubuntu-latest
+    permissions:
+      id-token: write   # Required for OIDC federated credential login
+      contents: read
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Setup Azure CLI
+      - name: Sign in to Azure (OIDC)
         uses: azure/login@v2
         with:
-          creds: ${{ secrets.AZURE_CREDENTIALS }}
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
         continue-on-error: true
 
       - name: Install Bicep CLI
@@ -61,6 +66,28 @@ jobs:
               az bicep lint --file "$file"
             fi
           done
+        continue-on-error: true
+
+      - name: Validate ARM Deployments (dry-run)
+        run: |
+          echo "🧪 Validating compiled ARM templates..."
+          if az account show > /dev/null 2>&1; then
+            for file in templates/*.bicep; do
+              if [ -f "$file" ]; then
+                arm_file="${file%.bicep}.json"
+                if [ -f "$arm_file" ]; then
+                  echo "Validating: $arm_file"
+                  az deployment group validate \
+                    --resource-group "${{ vars.AZURE_RESOURCE_GROUP || 'bicep-rg' }}" \
+                    --template-file "$arm_file" \
+                    --no-prompt \
+                    || echo "⚠️ Dry-run validation skipped for $arm_file (resource group may not exist)"
+                fi
+              fi
+            done
+          else
+            echo "⚠️ Azure login unavailable – skipping deployment dry-run validation"
+          fi
         continue-on-error: true
 
   validate-schemas:

@@ -4,16 +4,32 @@ class AzureResourceGraphClient {
         this.baseUrl = 'https://management.azure.com';
         this.apiVersion = '2021-03-01';
         this.accessToken = null;
+        this.subscriptionId = null;
         this.resourceTypes = new Map();
         this.lastUpdate = null;
     }
 
     /**
-     * Initialize the client with access token
-     * @param {string} accessToken - Azure access token
+     * Update the subscription scope for subsequent queries.
+     * @param {string} subscriptionId
      */
-    initialize(accessToken) {
+    setSubscriptionId(subscriptionId) {
+        this.subscriptionId = subscriptionId;
+    }
+
+    /**
+     * Clear authentication state (called on sign-out).
+     */
+    clearAuth() {
+        this.accessToken = null;
+        this.subscriptionId = null;
+        this.resourceTypes.clear();
+        this.lastUpdate = null;
+    }
+
+    initialize(accessToken, subscriptionId) {
         this.accessToken = accessToken;
+        if (subscriptionId) this.subscriptionId = subscriptionId;
         this.loadCachedResourceTypes();
     }
 
@@ -28,7 +44,7 @@ class AzureResourceGraphClient {
         }
 
         const url = `${this.baseUrl}/providers/Microsoft.ResourceGraph/resources?api-version=${this.apiVersion}`;
-        
+
         try {
             const response = await fetch(url, {
                 method: 'POST',
@@ -38,7 +54,7 @@ class AzureResourceGraphClient {
                 },
                 body: JSON.stringify({
                     query: query,
-                    subscriptions: [] // Will query all accessible subscriptions
+                    subscriptions: this.subscriptionId ? [this.subscriptionId] : []
                 })
             });
 

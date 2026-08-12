@@ -426,6 +426,68 @@ See [docs/IMPROVEMENTS.md](docs/IMPROVEMENTS.md) for detailed changelog and rece
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
+## 🔐 Azure Authentication
+
+The tool uses **MSAL.js** (Microsoft Authentication Library) for browser-based sign-in with full MFA support. No backend server is required — authentication uses the OAuth 2.0 PKCE flow directly from the browser.
+
+### Setting up the Entra App Registration
+
+1. In the [Azure portal](https://portal.azure.com), go to **Microsoft Entra ID → App registrations → New registration**.
+2. Set **Name** (e.g. `bicep-schema-builder`), **Supported account types** = *Single tenant*.
+3. Under **Redirect URI**, choose **Single-page application (SPA)** and enter:
+   ```
+   https://techaboo.github.io/bicep-schema-builder/
+   ```
+   Add `http://localhost:3000` (or your local dev port) for local development.
+4. After creation, note the **Application (client) ID** and **Directory (tenant) ID**.
+5. Under **API permissions**, add:
+   - `Azure Service Management` → `user_impersonation` (delegated)
+   - Grant admin consent if required by your tenant.
+
+### Configuring `authConfig.js`
+
+Open `authConfig.js` and set the following values at the top of the file:
+
+```js
+const MSAL_CONFIG = {
+  auth: {
+    clientId: 'YOUR_CLIENT_ID',         // Application (client) ID
+    authority: 'https://login.microsoftonline.com/YOUR_TENANT_ID',
+    redirectUri: 'https://techaboo.github.io/bicep-schema-builder/',
+  },
+  ...
+};
+```
+
+Set `DEMO_MODE = false` to enable real Azure sign-in. Keep `DEMO_MODE = true` for local development without credentials.
+
+### Required Azure Permissions
+
+The signed-in user needs at least **Reader** on both subscriptions to list resources and validate templates. For deployments via the UI, **Contributor** on the target resource group is required.
+
+### Configuring OIDC for GitHub Actions CI
+
+Instead of storing a long-lived `AZURE_CREDENTIALS` JSON secret, the CI workflow uses **OIDC federated credentials** (no client secret stored in GitHub).
+
+1. In your Entra app registration, go to **Certificates & secrets → Federated credentials → Add credential**.
+2. Choose **GitHub Actions deploying Azure resources**.
+3. Set:
+   - **Organization**: `techaboo`
+   - **Repository**: `bicep-schema-builder`
+   - **Entity type**: Branch
+   - **Branch**: `main`
+4. Add three **Actions secrets** to the repository (`Settings → Secrets and variables → Actions`):
+   | Secret name | Value |
+   |---|---|
+   | `AZURE_CLIENT_ID` | Application (client) ID |
+   | `AZURE_TENANT_ID` | Directory (tenant) ID |
+   | `AZURE_SUBSCRIPTION_ID` | Target subscription ID |
+5. Once confirmed working, remove the old `AZURE_CREDENTIALS` secret.
+
+> **Note:** The same app registration is used for both browser sign-in (MSAL) and CI/CD (OIDC). The federated credential is scoped to the `main` branch and does not require a client secret.
+
+---
+
 ## 🙏 Acknowledgments
 
 - Azure Bicep team for the amazing IaC language
